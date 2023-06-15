@@ -1,0 +1,9 @@
+# ignore all logs, model snapshots and results
+logs*/
+snapshot*/
+results*/
+
+#ignore machine generated files
+.pyc
+#ignore IDE file
+.vscode/
