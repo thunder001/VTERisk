@@ -2,11 +2,12 @@
 
 ## Pre-requirements: 
 Environment setup 
+
 Data file in a json format
 
 ## Usage
 ### Data structure
-The model need a json file having the following structure to run.
+The model need a json file having the following structure to run.  
 Note: one extra step, data file needs to pre-split into train/train.json, dev/dev.json and dev/test.json; 
 
 ```json
@@ -32,10 +33,11 @@ Note: one extra step, data file needs to pre-split into train/train.json, dev/de
 }
 ```
 ### Run scripts
-For code to run, go to src directory, enter the following in command line:
+For code to run, go to src directory, enter the following in command line:   
 ```python scripts/schedulers/expr_dispatcher.py –experiment-config-path configs/grid_search_test.json```
 
 The config file is in json format, please replace ```{}``` with your absoulte path for your data file.
+```json
 {
     "search_space": {
       "train_data_dir": ["{}/train"],
@@ -76,6 +78,7 @@ The config file is in json format, please replace ```{}``` with your absoulte pa
     },
     "available_gpus": [1]
   }
+```
 
 If run successfully, you will see a log director under the project folder, which saves model training/evaluation process and results, and snapshot folder, which save the trained model.
 
