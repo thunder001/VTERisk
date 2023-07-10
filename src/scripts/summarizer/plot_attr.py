@@ -18,8 +18,8 @@ import argparse
 from os.path import dirname, realpath
 
 sys.path.append(dirname(dirname(dirname(realpath(__file__)))))
-from pancnet.utils.parsing import CODE2DESCRIPTION, get_code, parse_args
-from pancnet.datasets.bth_disease_progression import PANC_CANCER_CODE, ICD10_PANC_CANCER, \
+from disrisknet .utils.parsing import CODE2DESCRIPTION, get_code, parse_args
+from disrisknet.datasets.bth_disease_progression import PANC_CANCER_CODE, ICD10_PANC_CANCER, \
     BASELINE_DISEASES, END_OF_TIME_DATE
 
 

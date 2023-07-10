@@ -6,6 +6,7 @@
       "model_name": ["transformer"],
       "num_layers":[1],
       "num_heads":[16],
+      "min_events_length":[3],
       "exclusion_interval": [0],
       "baseline_diseases": [false],
       "dropout":[0],

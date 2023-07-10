@@ -121,7 +121,7 @@ if __name__ == '__main__':
         print(model_for_attribution.model)
         # for month_idx in args.month_endpoints:
         # for month_idx in [3]:
-        for month_idx in [0, 1, 2, 3, 4, 5]:
+        for month_idx in [0, 1, 2]:
             test_attribution, test_censored_attribution = attribute.compute_attribution(
                 attribution_set, model_for_attribution, args, month_idx)
             print("Save test results to {}".format(args.save_path))

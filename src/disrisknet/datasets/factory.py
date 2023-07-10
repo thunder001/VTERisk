@@ -162,10 +162,11 @@ def get_dataset(args):
     else:
         cross_set = []
 
-    if args.snapshot is None and args.train:
+    code_to_index_path = os.path.join(args.model_dir, '.code_map')
+    if args.train:
         # Build a new code to index map only during training.
         build_code_to_index_map(args)
-        json.dump(args.code_to_index_map, open(args.results_path + '.code_map', 'w'))
+        json.dump(args.code_to_index_map, open(code_to_index_path, 'w'))
     else:
         if args.map_to_icd_system == "usa":
             args.code_to_index_map = map_code_to_index_to_usa(args)
@@ -179,9 +180,9 @@ def get_dataset(args):
             args.code_to_index_map = json.load(open(args.code_to_index_file, 'r'))
         else:
             print("Warning! No map_to_icd_system is used and no previous map is found from result files. Loading from separate files.")
-            args.code_to_index_map = json.load(open(args.snapshot + '.code_map', 'r'))
+            args.code_to_index_map = json.load(open(code_to_index_path + '.code_map', 'r'))
 
-    args.index_map_length = len(args.code_to_index_map)
+    # args.index_map_length = len(args.code_to_index_map)
 
     if args.max_events_length == None:
         args.max_events_length = max([len(record['codes']) for record in train.dataset])

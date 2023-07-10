@@ -7,3 +7,4 @@ results*/
 .pyc
 #ignore IDE file
 .vscode/
+__pycache__/
