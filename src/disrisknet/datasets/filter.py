@@ -1,5 +1,5 @@
 from disrisknet.utils.date import parse_date
-MIN_FOLLOWUP_YEAR_IF_NEG = 2
+MIN_FOLLOWUP_YEAR_IF_NEG = 0
 
 def get_avai_trajectory_indices(patient, events, feat_subgroup, split_group, args):
 
