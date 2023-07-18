@@ -96,14 +96,14 @@ def get_dataset_loader(args, data, rank=None):
                 collate_fn=concat_collate
             )
         else:
-            # sampler = torch.utils.data.sampler.WeightedRandomSampler(
-            #         weights=data.weights,
-            #         num_samples=len(data),
-            #         replacement=data.split_group=='train')
             sampler = torch.utils.data.sampler.WeightedRandomSampler(
                     weights=data.weights,
                     num_samples=len(data),
-                    replacement=True)
+                    replacement=data.split_group=='train')
+            # sampler = torch.utils.data.sampler.WeightedRandomSampler(
+            #         weights=data.weights,
+            #         num_samples=len(data),
+            #         replacement=True)
 
             data_loader = torch.utils.data.DataLoader(
                     data,
