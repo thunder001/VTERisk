@@ -69,6 +69,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             obs_time_end = parse_date(patient_metadata[patient_id]['end_of_data'])
             dob = parse_date(patient_metadata[patient_id]['birthdate'])
             index_date = parse_date(patient_metadata[patient_id]['indexdate'])
+            ks = patient_metadata[patient_id]['ks_mod_score']
             events = self.process_events(patient_metadata[patient_id]['events'], obs_time_end)
             outcome, outcome_date = self.get_outcome_date(events, index_date, 
                                                                      end_of_date=obs_time_end)
@@ -77,7 +78,8 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                                  'outcome_date': outcome_date,
                                  'split_group': patient_metadata[patient_id]['split_group'],
                                  'obs_time_end': obs_time_end,
-                                 'index_date': index_date})
+                                 'index_date': index_date,
+                                 'ks': ks})
             
             feat_subgroup = {'birth_date': patient_metadata[patient_id]['birthdate']}
 
@@ -132,16 +134,19 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
 
     def get_trajectory(self, patient):
 
-        if self.shard:
-            patient['events'] = self.process_events(patient['events'], patient["obs_time_end"])
+        # if self.shard:
+        #     patient['events'] = self.process_events(patient['events'], patient["obs_time_end"])
 
-        if self.split_group in ['dev', 'test', 'attribute', 'all']:
-            if not self.args.no_random_sample_eval_trajectories:
-                selected_idx = [random.choice(patient['avai_indices']) for _ in range(self.args.max_eval_indices)]
-            else:
-                selected_idx = patient['avai_indices'][-self.args.max_eval_indices:]
-        else:
-            selected_idx = [random.choice(patient['avai_indices'])]
+        # if self.split_group in ['dev', 'test', 'attribute', 'all']:
+        #     if not self.args.no_random_sample_eval_trajectories:
+        #         selected_idx = [random.choice(patient['avai_indices']) for _ in range(self.args.max_eval_indices)]
+        #     else:
+        #         selected_idx = patient['avai_indices'][-self.args.max_eval_indices:]
+        # else:
+        #     selected_idx = [random.choice(patient['avai_indices'])]
+
+        assert(len(patient['avai_indices']) == 1), "Somethin is wrong. This patient has more than one trajectory!"
+        selected_idx = patient['avai_indices']
 
         samples = []
         for idx in selected_idx:
@@ -162,6 +167,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                             'time_seq': time_seq,
                             'age_seq': age_seq,
                             'age': age,
+                            'ks': patient['ks'],
                             'admit_date': events_to_date[-1]['admit_date'].isoformat(),
                             'exam': str(events_to_date[-1]['admid'])})
 
@@ -269,7 +275,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                 'age_seq': pad_arr(age_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
                 'code_str': code_str
             }
-            for key in ['y', 'y_seq', 'y_mask', 'time_at_event', 'admit_date', 'exam', 'age', 'outcome',
+            for key in ['y', 'y_seq', 'y_mask', 'time_at_event', 'admit_date', 'exam', 'age', 'ks', 'outcome',
                         'days_to_censor', 'patient_id']:
                 item[key] = sample[key]
             items.append(item)

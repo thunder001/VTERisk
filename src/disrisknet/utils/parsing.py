@@ -7,10 +7,10 @@ import pickle
 import disrisknet.learn.state_keeper as state
 
 POSS_VAL_NOT_LIST = 'Flag {} has an invalid list of values: {}. Length of list must be >=1'
-ICD10_MAPPER_NAME = "data/icd10_eng_diag_chapters.tsv"   # TODO: These files should been renamed
-ICD8_MAPPER_NAME = "data/icd8_eng.tsv"
-ICD9_MAPPER_NAME = "data/icd9_disease_descriptions.tsv"
-ICD10TO9_MAPPER_NAME = "data/icd10cmtoicd9gem.txt"
+ICD10_MAPPER_NAME = "src/data/icd10_eng_diag_chapters.tsv"   # TODO: These files should been renamed
+ICD8_MAPPER_NAME = "src/data/icd8_eng.tsv"
+ICD9_MAPPER_NAME = "src/data/icd9_disease_descriptions.tsv"
+ICD10TO9_MAPPER_NAME = "src/data/icd10cmtoicd9gem.txt"
 
 CODEDF10 = pd.read_csv(ICD10_MAPPER_NAME, sep='\t', header=None,
     names=['code', 'description', 'chapter', 'chapter_name', 'block_name', 'block']
@@ -102,6 +102,7 @@ def parse_args(args_str=None):
     parser.add_argument('--use_time_embed', action='store_true', default=True, help='Wether or not to condition embeddings by their relative time.')
     parser.add_argument('--use_age_in_cox', action='store_true', default=False, help='Wether or not to implement age directly into baseline models.')
     parser.add_argument('--add_age_neuron', action='store_true', default=False, help='Wether or not to add age neuron in abstract risk model')
+    parser.add_argument('--add_ks_neuron', action='store_true', default=False, help='Wether or not to add ks neuron in abstract risk model')
     parser.add_argument('--use_age_embed', action='store_true', default=True, help='Wether or not to condition embeddings by their relative time.')
     parser.add_argument('--time_embed_dim', type=int, default=128, help="Representation size at for time embeddings.")
     parser.add_argument('--pred_mask', action='store_true', default=False, help='Pred masked out tokens.')

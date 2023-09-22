@@ -1,5 +1,5 @@
 from disrisknet.utils.date import parse_date
-MIN_FOLLOWUP_YEAR_IF_NEG = 0
+MIN_FOLLOWUP_YEAR_IF_NEG = 0.0
 
 def get_avai_trajectory_indices(patient, events, feat_subgroup, split_group, args):
 
@@ -25,27 +25,26 @@ def get_avai_trajectory_indices(patient, events, feat_subgroup, split_group, arg
     candidate_indices = []
     valid_indices = []
     y = False
-
     for idx in range(len(events)):
         if patient['outcome'] and \
                 (patient['outcome_date'] - events[idx]['admit_date']).days <= 30 * args.exclusion_interval:
             continue
 
         if is_valid_trajectory(events[:idx+1], patient['outcome_date'],
-                                patient['outcome'], patient['index_date'], args):
+                                patient['outcome'], patient['index_date'], args, split_group):
             if is_valid_age(events[idx]['admit_date']):
                 candidate_indices.append(idx)
                 days_to_censor = (patient['outcome_date']-events[idx]['admit_date']).days
                 y = (days_to_censor < ( max(args.month_endpoints) * 30) and patient['outcome']) or y
-        if len(candidate_indices) > 0:
-            valid_indices.append(candidate_indices[-1])
+    if len(candidate_indices) > 0:
+        valid_indices.append(candidate_indices[-1])
     if not valid_indices:
         return [], None
     else:
          return valid_indices, y
 
 
-def is_valid_trajectory(events_to_date, outcome_date, outcome, index_date, args):
+def is_valid_trajectory(events_to_date, outcome_date, outcome, index_date, args, split_group):
 
     if events_to_date[-1]['admit_date'] > index_date:
         return False
@@ -58,7 +57,11 @@ def is_valid_trajectory(events_to_date, outcome_date, outcome, index_date, args)
     is_pos_pre_cancer = events_to_date[-1]['admit_date'] < outcome_date
 
     is_valid_pos = outcome and is_pos_pre_cancer and  is_pos_in_time_horizon
-    is_valid_neg = not outcome and \
+
+    if split_group == 'test':
+        is_valid_neg = not outcome
+    else:
+        is_valid_neg = not outcome and \
                    (outcome_date - events_to_date[-1]['admit_date']).days // 365 > MIN_FOLLOWUP_YEAR_IF_NEG
     return (is_valid_neg or is_valid_pos)
 

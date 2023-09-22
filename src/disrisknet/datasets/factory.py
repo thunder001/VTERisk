@@ -35,8 +35,7 @@ def get_dataset_class(args):
 def build_code_to_index_map(args):
     
     print("Building code to index map")
-    pkl_name = 'data/all_observed_{}.pkl'.format(args.disease_code_system)
-    # pkl_name = 'data/all_observed_phe_wo_vte.pkl'
+    pkl_name = 'src/data/all_observed_{}.pkl'.format(args.disease_code_system)
 
     with open(pkl_name, 'rb') as f:
         pkl_codes = pickle.load(f)

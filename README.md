@@ -33,8 +33,8 @@ Note: one extra step, data file needs to pre-split into train/train.json, dev/de
 }
 ```
 ### Run scripts
-For code to run, go to src directory, enter the following in command line:   
-```python scripts/schedulers/expr_dispatcher.py –experiment-config-path configs/grid_search_test.json```
+For code to run, go to repo root directory (VTERISK), enter the following in command line:   
+```python src/scripts/schedulers/expr_dispatcher.py –experiment-config-path configs/grid_search_test.json```
 
 The config file is in json format, please replace ```{}``` with your absoulte path for your data file.
 ```json
@@ -46,6 +46,7 @@ The config file is in json format, please replace ```{}``` with your absoulte pa
       "model_name": ["transformer"],
       "num_layers":[1],
       "num_heads":[16],
+      "min_events_length":[3],
       "exclusion_interval": [0],
       "baseline_diseases": [false],
       "dropout":[0],
@@ -53,7 +54,6 @@ The config file is in json format, please replace ```{}``` with your absoulte pa
       "pool_name": ["Softmax_AttentionPool"],
       "use_time_embed": [true],
       "use_age_embed": [true],
-      "no_random_sample_eval_trajectories": [true],
       "pad_size": [100],
       "epochs":[10],
       "train":[true],
@@ -68,13 +68,12 @@ The config file is in json format, please replace ```{}``` with your absoulte pa
       "max_batches_per_train_epoch": [1000],
       "max_batches_per_dev_epoch": [500],
       "max_events_length": [50],
-      "max_eval_indices": [10],
       "eval_auroc": [true],
       "eval_auprc": [true],
       "eval_c_index": [true],
       "tuning_metric":["6month_auroc_c"],
-      "model_dir":["../snapshot_vte"],
-      "log_dir":["../logs_transformer_vte"]
+      "model_dir":["snapshot_vte"],
+      "log_dir":["logs_transformer_vte"]
     },
     "available_gpus": [1]
   }

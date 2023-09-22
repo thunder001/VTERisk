@@ -4,7 +4,8 @@ import os
 import json
 import gc
 import datetime
-from pancnet.utils.date import parse_date
+# from disrisknet.utils.date import parse_date
+import copy
 
 def find_patients_with_vte_phecode(dat_dict):
     patients = []
@@ -87,7 +88,12 @@ def file_split_drug(big_file_path, json_cohort_dir, split_dir):
     print("All done!")
     
     
-
+def filter_data(raw_data_dict, year='2006'):
+    data_dict_cp = copy.deepcopy(raw_data_dict)
+    for pat in raw_data_dict:
+        if raw_data_dict[pat]['indexdate' < year]:
+            del data_dict_cp[pat]
+    return data_dict_cp
 
 # demo_path = 'F:\\tmp_pancreatic\\temp_tsv\\global\\raw\\demo.tsv'
 # demo_split_dir = 'F:\\tmp_pancreatic\\temp_tsv\\global\\split'
@@ -146,6 +152,9 @@ def train_dev_test_file_split(metafile,  sampling=True, train_size=8000, dev_siz
     train_dir = os.path.join(par_dir, 'train')
     dev_dir = os.path.join(par_dir, 'dev')
     test_dir = os.path.join(par_dir, 'test')
+    # train_dir = os.path.join(par_dir, 'train-10000')
+    # dev_dir = os.path.join(par_dir, 'dev-10000')
+    # test_dir = os.path.join(par_dir, 'test-10000')
     if not os.path.exists(train_dir):
         os.mkdir(train_dir)
     if not os.path.exists(dev_dir):
@@ -294,62 +303,55 @@ def combine_json_files_2(json_paths, combined_dir):
     json.dump(combined_dict, open(combined_path, 'w'))
     print('All done!')
 
-if __name__ == '__main__':
-    # json_dir = 'F:\\tmp_pancreatic\\temp_json\\global\\meta_split'
-    # files = os.listdir(json_dir)
-    # files = files[2:8]
-    # for file in files:
-    #     json_path = os.path.join(json_dir, file)
-    #     json_split_dir = 'F:\\tmp_pancreatic\\temp_json\\global\\meta_split_level_2'
-    #     print('{} will be split and save to the directory: \n{}'.format(json_path, json_split_dir))
-    #     split_file(json_path, json_split_dir, size_of_split=100000)
+def add_ks_score(phe_json_path, ks_feather_path, new_phe_json_path):
+    print('Loading metadata json file ...')
+    phe_dt = json.load(open(phe_json_path, 'r'))
+    print('Loading data with ks scores ...')
+    ks_df = pd.read_feather(ks_feather_path)
+    ks_score_dt = dict(zip(ks_df.PatientICN, ks_df.ks_score))
+    ks_mod_score_dt = dict(zip(ks_df.PatientICN, ks_df.ks_mod_score))
+    ks_cat_dt = dict(zip(ks_df.PatientICN, ks_df.ks_cat))
+    ks_mod_cat_dt = dict(zip(ks_df.PatientICN, ks_df.ks_mod_cat))
+
+    print('Adding ks score to metadata ... ')
+    dat_dt = {}
+    common_ids = set(phe_dt.keys()).intersection(set(ks_df.PatientICN))
+    print('Cohort size: {}'.format(len(common_ids)))
+    for id in common_ids:
+        dat_dt[id] = phe_dt[id]
+        dat_dt[id].update({'ks_score': ks_score_dt[id],
+                           'ks_mod_score': ks_mod_score_dt[id],
+                           'ks_cat': ks_cat_dt[id],
+                           'ks_mod_cat': ks_mod_cat_dt[id]})
+    print("Saving final data into {}".format(new_phe_json_path))
+    json.dump(dat_dt, open(new_phe_json_path, 'w'))
     
-    # metadir = 'F:\\tmp_pancreatic\\temp_json\\global\\meta_split'
-    # train_dev_test_split(metadir)
 
-    # json_dir = 'F:\\tmp_pancreatic\\temp_json\\test\\test'
-    # files_to_combine = 2
-    # combined_dir = 'F:\\tmp_pancreatic\\temp_json\\test\\test_2'
-    # combine_json_files(json_dir, files_to_combine, combined_dir)
-
-    # json_dir = 'F:\\tmp_pancreatic\\temp_json\\global\\train'
-    # files_to_combine = 3
-    # combined_dir = 'F:\\tmp_pancreatic\\temp_json\\global\\train_2'
-    # combine_json_files(json_dir, files_to_combine, combined_dir)
-
-    # json_dir = 'F:\\tmp_pancreatic\\temp_json\\global\\dev'
-    # files_to_combine = 3
-    # combined_dir = 'F:\\tmp_pancreatic\\temp_json\\global\\dev_2'
-    # combine_json_files(json_dir, files_to_combine, combined_dir)
-
-    # json_dir = 'F:\\tmp_pancreatic\\temp_json\\global\\test'
-    # files_to_combine = 3
-    # combined_dir = 'F:\\tmp_pancreatic\\temp_json\\global\\test_2'
-    # combine_json_files(json_dir, files_to_combine, combined_dir)
-
-    # json_path_1 = 'F:\\tmp_pancreatic\\temp_json\\global\\train_2\\combined.json'
-    # json_path_2 = 'F:\\tmp_pancreatic\\temp_json\\global\\dev_2\\combined.json'
-    # json_path_3 = 'F:\\tmp_pancreatic\\temp_json\\global\\test_2\\combined.json'
-    # json_paths = [json_path_1, json_path_2, json_path_3]
-    # combined_dir = 'F:\\tmp_pancreatic\\temp_json\\global\\meta_3m'
-    # combine_json_files_2(json_paths, combined_dir)
-
-    # big_file_path = r'F:\tmp_pancreatic\temp_tsv\global_drug\drugs.tsv' 
-    # json_cohort_dir = r'F:\tmp_pancreatic\temp_json\global\icd_split'
-    # split_dir = r'F:\tmp_pancreatic\temp_tsv\global\drug_split'
-    # file_split_drug(big_file_path, json_cohort_dir, split_dir)
-
-    # metadir = 'F:\\tmp_pancreatic\\temp_json\\global\\drug_split_panc'
-    # train_dev_test_split(metadir)
-
-    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\drug\\part_0.json'
-    # train_dev_test_split(metafile)
-
+if __name__ == '__main__':
+    
+    # ------ VTE file splits -----
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-500.json'
     # train_dev_test_random_split(metafile)
 
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-10000.json'
     # train_dev_test_file_split(metafile)
 
-    metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-complete.json'
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-complete.json'
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-081823.json'
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-090123.json'
+    metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-090123-ks-2.json'
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-10000-ks-2.json'
     train_dev_test_file_split(metafile, sampling=False)
+
+    # ---- Add ks score to VTE dataset ------
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-10000.json'
+    # ks_feather = 'F:\\tmp_pancreatic\\temp_fst\\global\\raw\\analytic_final_2000-2021.feather'
+    # new_metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-10000-ks-2.json'
+    # add_ks_score(metafile, ks_feather, new_metafile)
+    
+    
+    # ---- Add ks score to VTE dataset ------
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-090123.json'
+    # ks_feather = 'F:\\tmp_pancreatic\\temp_fst\\global\\raw\\analytic_final_2000-2021.feather'
+    # new_metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-090123-ks-2.json'
+    # add_ks_score(metafile, ks_feather, new_metafile)

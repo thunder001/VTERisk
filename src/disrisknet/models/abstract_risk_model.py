@@ -37,7 +37,7 @@ class AbstractRiskModel(nn.Module):
         self.pool = get_pool(args.pool_name)(args)
         self.dropout = nn.Dropout(p=args.dropout)
         if args.model_name not in ['cox', 'add_cox']:
-            hidden_dim = args.hidden_dim+1 if self.args.add_age_neuron else args.hidden_dim
+            hidden_dim = args.hidden_dim+1 if self.args.add_age_neuron or self.args.add_ks_neuron else args.hidden_dim
             self.prob_of_failure_layer = Cumulative_Probability_Layer(hidden_dim, len(args.month_endpoints), args)
 
         if args.use_time_embed:
@@ -119,6 +119,11 @@ class AbstractRiskModel(nn.Module):
         if self.args.add_age_neuron:
             age_in_year = batch['age']/365.
             hidden = torch.cat((hidden, age_in_year), axis=-1)
+        # pdb.set_trace()
+        if self.args.add_ks_neuron:
+            ks = batch['ks'].int()
+            ks = ks.reshape(len(ks), 1)
+            hidden = torch.cat((hidden, ks), axis=-1)
         logit = self.prob_of_failure_layer(hidden)
 
         aux_loss = {}

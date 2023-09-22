@@ -50,7 +50,7 @@ def launch_experiment(gpu, flag_string):
     # experiment_string = "CUDA_VISIBLE_DEVICES={} /opt/conda/bin/python scripts/main.py {} --results_path='{}'".format(
     #     gpu, flag_string, results_path)
 
-    experiment_string = "python scripts/main.py {} --log_name={} --log_dir={}".format(flag_string, log_name, log_dir)
+    experiment_string = "python src/scripts/main.py {} --log_name={} --log_dir={}".format(flag_string, log_name, log_dir)
 
     # print("\nFlag string:\n")
     # print(flag_string)
@@ -60,7 +60,8 @@ def launch_experiment(gpu, flag_string):
 
     pipe_str = ">>" if args.force_evaluate or ("--resume" in flag_string and not args.force_rerun) else ">"
     shell_cmd = "{} {} {} 2>&1".format(experiment_string, pipe_str, log_path)
-
+    # shell_cmd = "{} {} {}".format(experiment_string, pipe_str, log_path)
+    # shell_cmd = "{}".format(experiment_string)
     if os.path.exists(log_path):
         print(RESULTS_PATH_APPEAR_ERR.format(log_name))
         if not args.force_rerun and not args.force_evaluate:

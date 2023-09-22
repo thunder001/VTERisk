@@ -80,7 +80,7 @@ def init_metrics_dictionary(modes):
 
 def get_dataset_loader(args, data, rank=None):
     persistent_workers = True if args.num_workers > 0 else False
-    if args.class_bal and data.split_group in ['train', 'dev', 'attribute']:
+    if args.class_bal and data.split_group in ['train', 'attribute']:
         if args.world_size > 1:
             sampler = torch.utils.data.distributed.DistributedSampler(
                 data,
