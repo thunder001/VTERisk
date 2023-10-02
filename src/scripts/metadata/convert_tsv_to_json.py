@@ -9,23 +9,20 @@ import gc
 from tqdm import tqdm
 import pdb
 import sys
+import pdb
 from os.path import dirname, realpath
 sys.path.append(dirname(dirname(dirname(realpath(__file__)))))
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Build metadata json from tsv')
-    parser.add_argument('--tsv_dir', type=str, default='F:\\tmp_pancreatic\\temp_tsv\\global\\drug_split',
+    parser.add_argument('--tsv_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\global\\vte\\phecodes_100000.tsv',
                         help="Where all raw tsv files are stored")
-    parser.add_argument('--json_cohort_dir', type=str, default='F:\\tmp_pancreatic\\temp_json\\global\\icd_split',
-                        help="Where all json formatted cohorts based on icd codes stored")
-    parser.add_argument('--demo_path', type=str, default='F:\\tmp_pancreatic\\temp_tsv\\global\\raw\\demo.tsv',
+    parser.add_argument('--demo_path', type=str, default='F:\\tmp_pancreatic\\temp_fst\\global\\raw\\vte\\demo_vte.feather',
                         help="Where all demographic data stored")
-    parser.add_argument('--out_dir', type=str, default='F:\\tmp_pancreatic\\temp_json\\global\\drug_split',
+    parser.add_argument('--out_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100000.json',
                         help="Where all demographic data stored")
-    # parser.add_argument('--library_path', type=str, default=None,
-    #                     help="Where to general the all_icd.pkl file. If empty, do not generate.")
-    parser.add_argument('--delimiter', type=str, default='\t')
+    parser.add_argument('--delimiter', type=str, default=',')
     parser.add_argument('--head', type=int, default=None)
     return parser.parse_args()
 
@@ -42,15 +39,13 @@ def tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict):
         legend = lines[0].strip().split(args.delimiter)
         rows = [row.strip().split(args.delimiter) for row in lines[1:]]
         print(f'legend: {legend}')
-        assert all([j in legend for j in ["PatientICN", "Date", "ICDCodeType", "ICDCode"]])
+        assert all([j in legend for j in ["PatientICN", "Date", "Phecode"]])
         metadata = {}
         key_translater = {
             'PatientICN': 'PID',
             'Date': 'admdate',
-            'ICDCode': 'codes',
-            'ICDCodeType': 'code_type'
+            'Phecode': 'codes'
         }
-        all_codes = set()
 
         print("Parsing tsv data...")
         for rowid, row in tqdm(enumerate(rows)):
@@ -70,6 +65,7 @@ def tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict):
 
             # ! Pay attention to the following date type change for correct mapping
             patient_id = int(float(row_dict['PID']))
+            # patient_id = str(row_dict['PID'])
 
             if patient_id in dob_dict:
                 row_dict['DOB'] = dob_dict[patient_id]
@@ -85,9 +81,6 @@ def tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict):
                 metadata[patient_id]['events'].append(row_dict)
             else:
                 metadata[patient_id]['events'].append(row_dict)
-
-            if args.library_path:
-                all_codes.add(row_dict['codes'])
 
         print("Generating json data...")
         warning_flag = False
@@ -121,7 +114,7 @@ def tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict):
                         print("Warning: Date of birth, death, or other entries are missing!")
                         warning_flag = True
         assert not [p for p in metadata if any(['_' in e['admdate'] for e in metadata[p]['events']])]
-        return all_codes, metadata
+        return metadata
 
 def drug_tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict, tdt_dict):
     print("Loading tsv data...")
@@ -222,10 +215,11 @@ def drug_tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict, tdt_dict):
         return metadata
 
 def prep_demo(demo_filepath):
-    demo = pd.read_csv(demo_filepath, engine='pyarrow', sep="\t")
+    demo = pd.read_feather(demo_filepath)
     demo = demo[~demo['PatientICN'].isna()]  # Remove patient with na
     # ! Covert columns to proper data types for downstream use and storage as json format
-    demo['PatientICN'] = demo['PatientICN'].astype(int)
+    # pdb.set_trace()
+    demo['PatientICN'] = demo['PatientICN'].astype(np.int64)
     demo['BirthDate'] = demo['BirthDate'].astype(str)
     demo['DeathDate'] = demo['DeathDate'].astype(str)
     dob_dict = dict(zip(demo.PatientICN, demo.BirthDate))
@@ -249,86 +243,21 @@ if __name__ == '__main__':
     dob_dict, dod_dict, gender_dict = prep_demo(args.demo_path)
     print("Demo info processed!\n")
 
-    files = os.listdir(args.tsv_dir)
-    print(files)
-    for fname in files:
-        file_path = os.path.join(args.tsv_dir, fname)
-        file_path_cohort = os.path.join(args.json_cohort_dir, fname.replace('tsv', 'json'))
-        print("Processing {} with cohort {}".format(file_path, file_path_cohort))
-        fname_out = fname.replace('tsv', 'json')
-        if not os.path.exists(args.out_dir):
-            os.makedirs(args.out_dir)
-        out_path = os.path.join(args.out_dir, fname_out)
-        print('Will save to {}'.format(out_path))
-        # # with open(out_path, 'w') as fw:
-        # #     assert os.path.isfile(out_path)
-        # #     print('Will save to {}'.format(out_path))
-        # #     pass
+    file_path = args.tsv_path
+    out_path = args.out_path
+    print('Will save to {}'.format(out_path))
+    # # with open(out_path, 'w') as fw:
+    # #     assert os.path.isfile(out_path)
+    # #     print('Will save to {}'.format(out_path))
+    # #     pass
+    metadata = tsv_to_json(file_path, dob_dict, dod_dict, gender_dict)  # time-consuming!
+    # pdb.set_trace()
 
-        tdt_dict = get_tdt_group(file_path_cohort)
-        metadata = drug_tsv_to_json(file_path, dob_dict, dod_dict, gender_dict, tdt_dict)  # time-consuming!
+    with open(out_path, 'w') as fw:
+        print("Saving data to {}".format(out_path))
+        json.dump(metadata, fw, indent=None, sort_keys=True)
 
-        with open(out_path, 'w') as fw:
-            print("Saving data to {}".format(out_path))
-            json.dump(metadata, fw, indent=None, sort_keys=True)
-
-        # if args.library_path:
-        #     with open(args.library_path, 'w') as fw:
-        #         pkl.dump(list(all_codes), fw)
+    # if args.library_path:
+    #     with open(args.library_path, 'w') as fw:
+    #         pkl.dump(list(all_codes), fw)
     print('All done!')
-
-# if __name__ == '__main__':
-#     args = parse_args()
-#     for root, subdirs, files in os.walk(args.tsv_path):
-#         if len(files) > 0 and 'demo.tsv' not in files:
-#             file_path = os.path.join(root, files[0])
-#             print("Processing {}".format(file_path))
-#             all_codes, metadata = tsv_to_json(file_path)
-#             out_dir = root.replace("tsv", "json")
-#             # print(out_dir)
-#             if not os.path.exists(out_dir):
-#                 os.makedirs(out_dir)
-#             out_path = os.path.join(out_dir, files[0])
-#             # print(out_path)
-#             out_path = out_path.replace("tsv", "json")
-#             # print(out_path)
-#             with open(out_path, 'w') as fw:
-#                 print("Save to {}".format(out_path))
-#                 json.dump(metadata, fw, indent=None, sort_keys=True)
-#             if args.library_path:
-#                 with open(args.library_path, 'w') as fw:
-#                     pkl.dump(list(all_codes), fw)
-
-# # Generate small dataset for testing
-# import pandas as pd
-# tsv_fname = 'F:\\tmp_pancreatic\\temp_tsv\\global\\drug_split\\part_0.tsv'
-# part_0 = pd.read_csv(tsv_fname, sep='\t', engine='pyarrow')
-# part_t = part_0.sample(10000)
-# tsv_out = 'F:\\tmp_pancreatic\\temp_tsv\\global\\tsv_test_drug.tsv'
-# part_t.to_csv(tsv_out, sep='\t', index=False)
-# # demo_path = 'F:\\tmp_pancreatic\\temp_tsv\\global\\raw\\demo.tsv'
-# # demo = pd.read_csv(demo_path, sep='\t', engine='pyarrow')
-# # demo.loc[demo['PatientICN'].isin([1000648986, 1000649372])]
-
-# # # Testing using small dataset
-# if __name__ == '__main__':
-#     args = parse_args()
-#     print("Preprocessing demo info ...")
-#     dob_dict, dod_dict, gender_dict = prep_demo(args.demo_path)
-#     print("Demo info processed!\n")
-
-#     file_path = 'F:\\tmp_pancreatic\\temp_tsv\\global\\tsv_test_drug.tsv'
-#     file_path_cohort = r'F:\tmp_pancreatic\temp_json\test\test_2\combined.json'
-#     out_path = 'F:\\tmp_pancreatic\\temp_tsv\\global\\tsv_test_drug.json'
-
-#     tdt_dict = get_tdt_group(file_path_cohort)
-#     metadata = drug_tsv_to_json(file_path, dob_dict, dod_dict, gender_dict, tdt_dict)  # time-consuming!
-
-#     with open(out_path, 'w') as fw:
-#         print("Save to {}".format(out_path))
-#         json.dump(metadata, fw, indent=None, sort_keys=True)
-
-#     # if args.library_path:
-#     #     with open(args.library_path, 'w') as fw:
-#     #         pkl.dump(list(all_codes), fw)
-#     print('All done!')

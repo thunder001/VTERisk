@@ -13,7 +13,7 @@
         "pool_name": ["Softmax_AttentionPool"],
         "use_time_embed": [true],
         "use_age_embed": [true],
-        "add_ks_neuron": [true],
+        "add_ks_neuron": [false],
         "no_random_sample_eval_trajectories": [false],
         "pad_size": [200],
         "epochs":[10],
@@ -21,7 +21,7 @@
         "dev":[true],
         "test":[true],
         "cuda":[true],
-        "device":["cuda:1"],
+        "device":["cuda:0"],
         "num_workers":[0],
         "optimizer": ["adam"],
         "train_batch_size": [128],
@@ -34,8 +34,8 @@
         "eval_auprc": [true],
         "eval_c_index": [true],
         "tuning_metric":["6month_auroc_c"],
-        "model_dir":["snapshot_vte_ks_mod_va_08_02"],
-        "log_dir":["logs_transformer_vte_ks_mod_va_08_02"]
+        "model_dir":["snapshot_vte_ks_mod_va_09"],
+        "log_dir":["logs_transformer_vte_ks_mod_va_09"]
     },
     "available_gpus": [1]
   }
