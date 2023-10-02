@@ -165,7 +165,8 @@ def get_dataset(args):
     if args.train:
         # Build a new code to index map only during training.
         build_code_to_index_map(args)
-        json.dump(args.code_to_index_map, open(code_to_index_path, 'w'))
+        map_path_stem = os.path.join(args.model_dir, args.log_name)
+        json.dump(args.code_to_index_map, open(map_path_stem + '.code_map', 'w'))
     else:
         if args.map_to_icd_system == "usa":
             args.code_to_index_map = map_code_to_index_to_usa(args)

@@ -32,6 +32,10 @@ def find_patients_with_vte_phecode(dat_dict):
 
 
 def split_file(big_file_path, split_dir, size_of_split=1000000):
+    '''
+    This function is used for split a big data file into smaller ones
+    and save them into a give directory
+    '''
     if not os.path.exists(split_dir):
         os.makedirs(split_dir)
     print("Loading big data.......\n")
@@ -105,6 +109,10 @@ def filter_data(raw_data_dict, year='2006'):
 
 
 def train_dev_test_split(metadir):
+    '''
+    This function automatically performs train/dev/test splits for multiple files in a directory.
+    Note: each file in the directory contains 'split_group' key.
+    '''
     par_dir = os.path.dirname(metadir)
     train_dir = os.path.join(par_dir, 'train')
     dev_dir = os.path.join(par_dir, 'dev')
@@ -148,6 +156,10 @@ def train_dev_test_split(metadir):
         gc.collect()
 
 def train_dev_test_file_split(metafile,  sampling=True, train_size=8000, dev_size=1000, test_size=1000):
+    '''
+    This function has two purposes: 1)perform train/dev/test split from a given json file with 'split_group' key.
+    2) perform sampling from each group, which is useful to prepare small subset for testing new functionalities.
+    '''
     par_dir = os.path.dirname(metafile)
     train_dir = os.path.join(par_dir, 'train')
     dev_dir = os.path.join(par_dir, 'dev')
@@ -216,7 +228,12 @@ def train_dev_test_file_split(metafile,  sampling=True, train_size=8000, dev_siz
     del test
     gc.collect()
 
-def train_dev_test_random_split(metafile, train_size=0.8, dev_size=0.1, test_size=0.1):
+def train_dev_test_file_random_split(metafile, train_size=0.8, dev_size=0.1, test_size=0.1):
+    '''
+    This function randomly splits a json file into train, dev and test datasets, and 
+    automatically saved splitted files under train, dev and test folders.
+    Note: there is special handling for non-string type diagnosis codes when necessary
+    '''
     par_dir = os.path.dirname(metafile)
     train_dir = os.path.join(par_dir, 'train')
     dev_dir = os.path.join(par_dir, 'dev')
@@ -341,7 +358,8 @@ if __name__ == '__main__':
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-090123.json'
     metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-090123-ks-2.json'
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-10000-ks-2.json'
-    train_dev_test_file_split(metafile, sampling=False)
+    # train_dev_test_file_split(metafile, sampling=False)
+    train_dev_test_file_random_split(metafile)
 
     # ---- Add ks score to VTE dataset ------
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-10000.json'
