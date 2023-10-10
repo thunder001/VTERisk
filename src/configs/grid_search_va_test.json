@@ -33,8 +33,8 @@
         "eval_auprc": [true],
         "eval_c_index": [true],
         "tuning_metric":["6month_auroc_c"],
-        "model_dir":["snapshot_test_vte"],
-        "log_dir":["logs_transformer_test_vte"]
+        "model_dir":["snapshots/snapshot_test_vte"],
+        "log_dir":["logs/logs_transformer_test_vte"]
     },
     "available_gpus": [1]
   }

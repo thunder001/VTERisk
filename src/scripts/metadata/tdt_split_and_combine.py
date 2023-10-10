@@ -7,30 +7,6 @@ import datetime
 # from disrisknet.utils.date import parse_date
 import copy
 
-def find_patients_with_vte_phecode(dat_dict):
-    patients = []
-    val_patients = []
-    for pat in dat_dict:
-        pat_dict = {}
-        pat_dict['patientid'] = pat
-        pat_dict['indexdate'] = dat_dict[pat]['indexdate']
-        pat_dict['vte_events'] = []
-        for event in dat_dict[pat]['events']:
-            # print(event)
-            if '452' in event['codes']:
-                pat_dict['vte_events'].append(event)
-
-        if len(pat_dict['vte_events']) >= 1:
-            patients.append(pat_dict)
-            for vte_event in pat_dict['vte_events']:
-                if parse_date(vte_event['admdate']) > parse_date(pat_dict['indexdate']):
-                    val_patients.append(pat_dict)
-                    break   
-    print(len(patients))
-    print(len(val_patients))
-    return patients, val_patients
-
-
 def split_file(big_file_path, split_dir, size_of_split=1000000):
     '''
     This function is used for split a big data file into smaller ones
@@ -90,22 +66,6 @@ def file_split_drug(big_file_path, json_cohort_dir, split_dir):
         split_path = os.path.join(split_dir, fname)
         subdat.to_csv(split_path, sep='\t', index=False)
     print("All done!")
-    
-    
-def filter_data(raw_data_dict, year='2006'):
-    data_dict_cp = copy.deepcopy(raw_data_dict)
-    for pat in raw_data_dict:
-        if raw_data_dict[pat]['indexdate' < year]:
-            del data_dict_cp[pat]
-    return data_dict_cp
-
-# demo_path = 'F:\\tmp_pancreatic\\temp_tsv\\global\\raw\\demo.tsv'
-# demo_split_dir = 'F:\\tmp_pancreatic\\temp_tsv\\global\\split'
-# split_file(demo_path, demo_split_dir)
-
-# icd_path = 'F:\\tmp_pancreatic\\temp_tsv\\global\\icd_code_counts_final.tsv'
-# icd_split_dir = 'F:\\tmp_pancreatic\\temp_tsv\\global\\icd_split'
-# split_file(icd_path, icd_split_dir)
 
 
 def train_dev_test_split(metadir):
@@ -161,12 +121,12 @@ def train_dev_test_file_split(metafile,  sampling=True, train_size=8000, dev_siz
     2) perform sampling from each group, which is useful to prepare small subset for testing new functionalities.
     '''
     par_dir = os.path.dirname(metafile)
-    train_dir = os.path.join(par_dir, 'train')
-    dev_dir = os.path.join(par_dir, 'dev')
-    test_dir = os.path.join(par_dir, 'test')
-    # train_dir = os.path.join(par_dir, 'train-10000')
-    # dev_dir = os.path.join(par_dir, 'dev-10000')
-    # test_dir = os.path.join(par_dir, 'test-10000')
+    # train_dir = os.path.join(par_dir, 'train')
+    # dev_dir = os.path.join(par_dir, 'dev')
+    # test_dir = os.path.join(par_dir, 'test')
+    train_dir = os.path.join(par_dir, 'train-10000')
+    dev_dir = os.path.join(par_dir, 'dev-10000')
+    test_dir = os.path.join(par_dir, 'test-10000')
     if not os.path.exists(train_dir):
         os.mkdir(train_dir)
     if not os.path.exists(dev_dir):
@@ -319,29 +279,6 @@ def combine_json_files_2(json_paths, combined_dir):
     print('Dumping combined data ....')
     json.dump(combined_dict, open(combined_path, 'w'))
     print('All done!')
-
-def add_ks_score(phe_json_path, ks_feather_path, new_phe_json_path):
-    print('Loading metadata json file ...')
-    phe_dt = json.load(open(phe_json_path, 'r'))
-    print('Loading data with ks scores ...')
-    ks_df = pd.read_feather(ks_feather_path)
-    ks_score_dt = dict(zip(ks_df.PatientICN, ks_df.ks_score))
-    ks_mod_score_dt = dict(zip(ks_df.PatientICN, ks_df.ks_mod_score))
-    ks_cat_dt = dict(zip(ks_df.PatientICN, ks_df.ks_cat))
-    ks_mod_cat_dt = dict(zip(ks_df.PatientICN, ks_df.ks_mod_cat))
-
-    print('Adding ks score to metadata ... ')
-    dat_dt = {}
-    common_ids = set(phe_dt.keys()).intersection(set(ks_df.PatientICN))
-    print('Cohort size: {}'.format(len(common_ids)))
-    for id in common_ids:
-        dat_dt[id] = phe_dt[id]
-        dat_dt[id].update({'ks_score': ks_score_dt[id],
-                           'ks_mod_score': ks_mod_score_dt[id],
-                           'ks_cat': ks_cat_dt[id],
-                           'ks_mod_cat': ks_mod_cat_dt[id]})
-    print("Saving final data into {}".format(new_phe_json_path))
-    json.dump(dat_dt, open(new_phe_json_path, 'w'))
     
 
 if __name__ == '__main__':
@@ -352,13 +289,18 @@ if __name__ == '__main__':
 
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-10000.json'
     # train_dev_test_file_split(metafile)
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100000_final.json'
+    # train_dev_test_file_split(metafile)
 
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-complete.json'
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-081823.json'
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-090123.json'
-    metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-090123-ks-2.json'
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-090123-ks-2.json'
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-10000-ks-2.json'
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-100223-final.json'
     # train_dev_test_file_split(metafile, sampling=False)
+    # train_dev_test_file_random_split(metafile)
+    metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100223_final.json'
     train_dev_test_file_random_split(metafile)
 
     # ---- Add ks score to VTE dataset ------
