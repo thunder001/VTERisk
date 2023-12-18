@@ -280,6 +280,50 @@ def combine_json_files_2(json_paths, combined_dir):
     json.dump(combined_dict, open(combined_path, 'w'))
     print('All done!')
     
+def combine_icd_drug(phe_json, drug_json):
+    '''
+    phe_json: 
+    drug_json:
+    '''
+    combined_dict = {}
+    phe = json.load(open(phe_json, 'r'))
+    drug = json.load(open(drug_json, 'r'))
+    phe_cohort = set(phe.keys())
+    drug_cohort = set(drug.keys())
+    # pdb.set_trace()
+    union_cohort = phe_cohort | drug_cohort
+    intersect_cohort = phe_cohort & drug_cohort
+    phe_cohort_only = phe_cohort - drug_cohort
+    drug_cohort_only = drug_cohort - phe_cohort
+    print(f'There are {len(phe_cohort)} and {len(drug_cohort)} in icd cohort and drug cohort.')
+    print(f'Union: {len(union_cohort)}; Intersect: {len(intersect_cohort)}\nICD only: {len(phe_cohort_only)}; drug only {len(drug_cohort_only)}')
+    
+    for pat in union_cohort:
+        if pat in phe_cohort_only:
+            combined_dict[pat] = phe[pat]
+        # if pat in drug_cohort_only:
+        #     combined_dict[pat] = drug[pat]
+        if pat in intersect_cohort:
+            pat_dict = {}
+
+            phe_events = phe[pat]['events']
+            phe_end_of_data = phe[pat]['end_of_data']
+            drug_events = drug[pat]['events']
+            drug_end_of_data = drug[pat]['end_of_data']
+            # In case duplicated events, especially for pancreatic cancer patients
+            # pdb.set_trace()
+            if len(phe_events) > 0 and len(drug_events) > 0:
+                phe_events.extend(drug_events)
+                # events_set = set(frozenset(e.items()) for e in icd_events if e is not None)
+                # events = [dict(s) for s in events_set]
+                end_of_data = max(phe_end_of_data, drug_end_of_data)
+                pat_dict['events'] = phe_events
+                pat_dict['end_of_data'] = end_of_data
+                for key in ['birthdate', 'gender', 'split_group', 'indexdate', 'ks_mod_score']:
+                    pat_dict[key] = phe[pat][key]
+                combined_dict[pat] = pat_dict
+
+    return combined_dict
 
 if __name__ == '__main__':
     
@@ -300,8 +344,8 @@ if __name__ == '__main__':
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-100223-final.json'
     # train_dev_test_file_split(metafile, sampling=False)
     # train_dev_test_file_random_split(metafile)
-    metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100223_final.json'
-    train_dev_test_file_random_split(metafile)
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100223_final.json'
+    # train_dev_test_file_random_split(metafile)
 
     # ---- Add ks score to VTE dataset ------
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-10000.json'
@@ -315,3 +359,18 @@ if __name__ == '__main__':
     # ks_feather = 'F:\\tmp_pancreatic\\temp_fst\\global\\raw\\analytic_final_2000-2021.feather'
     # new_metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-090123-ks-2.json'
     # add_ks_score(metafile, ks_feather, new_metafile)
+
+    # ----- Combine phe and drug -----
+    # phe_path = 'F:\\tmp_pancreatic\\temp_json\\global\\vte\\phe\\data_100223_final.json'
+    # drug_path = 'F:\\tmp_pancreatic\\temp_json\\global\\vte\\drug\\medication.json'
+    # combined_dict = combine_icd_drug(phe_path, drug_path)
+    # combined_path = 'F:\\tmp_pancreatic\\temp_json\\global\\vte\\phe_drug\\combined.json'
+
+    # print('Dumping combined data ....')
+    # json.dump(combined_dict, open(combined_path, 'w'))
+    # print('All done!')
+
+    metafile = 'F:\\tmp_pancreatic\\temp_json\\global\\vte\\phe_drug\\combined_final.json'
+    # train_dev_test_file_random_split(metafile)
+
+    train_dev_test_file_split(metafile)

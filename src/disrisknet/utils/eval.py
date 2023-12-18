@@ -23,7 +23,7 @@ def compute_eval_metrics(args, loss, golds, patient_golds, preds,
         'days_to_final_censors': days_to_final_censors
     }
 
-    log_statement = '-- loss: {:.6f}'.format(loss)
+    log_statement = '-- loss: {:.6f}\n'.format(loss)
     sub_golds = {}
     if args.annual_eval_type == 'both':
         annual_eval_types = [False, True]
@@ -53,20 +53,20 @@ def compute_eval_metrics(args, loss, golds, patient_golds, preds,
             if args.eval_auroc:
                 key_name = '{}_{}month_auroc_{}'.format(key_prefix, time, independent_eval_label)
                 auc, curve = compute_auroc(golds_for_eval, probs_for_eval)
-                log_statement += " -{}: {} (n={} , c={} )".format(key_name, auc, len(golds_for_eval), sum(golds_for_eval))
+                log_statement += " -{}: {} (n={} , c={} )\n".format(key_name, auc, len(golds_for_eval), sum(golds_for_eval))
                 stats_dict[key_name].append(auc)
                 stats_dict[key_name+'_curve'].append(curve)
 
             if args.eval_auprc:
                 key_name = '{}_{}month_auprc_{}'.format(key_prefix, time, independent_eval_label)
                 auc, fig_curve = compute_auprc(golds_for_eval, probs_for_eval)
-                log_statement += " -{}: {} (n={} , c={} )".format(key_name, auc, len(golds_for_eval), sum(golds_for_eval))    
+                log_statement += " -{}: {} (n={} , c={} )\n".format(key_name, auc, len(golds_for_eval), sum(golds_for_eval))    
                 stats_dict[key_name].append(auc)
                 stats_dict[key_name+'_curve'].append(fig_curve)
 
                 key_name = '{}_{}month_auprc_corrected_{}'.format(key_prefix, time, independent_eval_label)
                 auc, fig_curve = compute_auprc_corrected(golds_for_eval, probs_for_eval, golds)
-                log_statement += " -{}: {} (n={} , c={} )".format(key_name, auc, len(golds_for_eval),
+                log_statement += " -{}: {} (n={} , c={} )\n".format(key_name, auc, len(golds_for_eval),
                                                                   sum(golds_for_eval))
                 stats_dict[key_name].append(auc)
                 stats_dict[key_name + '_curve'].append(fig_curve)
@@ -74,20 +74,20 @@ def compute_eval_metrics(args, loss, golds, patient_golds, preds,
             if args.eval_mcc:
                 key_name = '{}_{}month_mcc_{}'.format(key_prefix, time, independent_eval_label)
                 mcc, fig_curve = compute_mcc(golds_for_eval, probs_for_eval)
-                log_statement += " -{}: {} (n={} , c={} )".format(key_name, mcc, len(golds_for_eval), sum(golds_for_eval))
+                log_statement += " -{}: {} (n={} , c={} )\n".format(key_name, mcc, len(golds_for_eval), sum(golds_for_eval))
                 stats_dict[key_name].append(mcc)
                 stats_dict[key_name+'_curve'].append(fig_curve)
 
                 key_name = '{}_{}month_mcc_corrected_{}'.format(key_prefix, time, independent_eval_label)
                 mcc, fig_curve = compute_mcc_corrected(golds_for_eval, probs_for_eval, golds)
-                log_statement += " -{}: {} (n={} , c={} )".format(key_name, mcc, len(golds_for_eval), sum(golds_for_eval))
+                log_statement += " -{}: {} (n={} , c={} )\n".format(key_name, mcc, len(golds_for_eval), sum(golds_for_eval))
                 stats_dict[key_name].append(mcc)
                 stats_dict[key_name+'_curve'].append(fig_curve)
 
         if args.eval_c_index:
             c_index = compute_c_index(probs, censor_times, golds)
             stats_dict['{}_c_index_{}'.format(key_prefix, independent_eval_label)].append(c_index)
-            log_statement += " -c_index_{}: {}".format(independent_eval_label, c_index)
+            log_statement += " -c_index_{}: {}\n".format(independent_eval_label, c_index)
 
     return log_statement, stats_dict, preds_dict
 

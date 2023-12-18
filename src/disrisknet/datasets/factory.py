@@ -1,11 +1,11 @@
 import json
 from disrisknet.utils.parsing import md5
-from disrisknet.utils.parsing import get_code
 import os
 import pickle
 import tqdm
 from collections import Counter, defaultdict
 import pandas as pd
+import pdb
 
 NO_DATASET_ERR = "Dataset {} not in DATASET_REGISTRY! Available datasets are {}"
 DATASET_REGISTRY = {}
@@ -33,18 +33,47 @@ def get_dataset_class(args):
 
 
 def build_code_to_index_map(args):
-    
     print("Building code to index map")
-    pkl_name = 'src/data/all_observed_{}.pkl'.format(args.disease_code_system)
+    if args.disease_code_system == 'phe':
+        pkl_name = 'src/data/all_observed_phe.pkl'
+        with open(pkl_name, 'rb') as f:
+            pkl_codes = pickle.load(f)
+        all_observed_codes = pkl_codes['phe']
 
-    with open(pkl_name, 'rb') as f:
-        pkl_codes = pickle.load(f)
-        if '' in pkl_codes:
-            pkl_codes.remove('')
-    if 'icd' in args.disease_code_system:
-        all_observed_codes = [get_code(args, code) for code in pkl_codes]
-    else:
-        all_observed_codes = pkl_codes
+    if args.disease_code_system == 'drug':
+        pkl_name = 'src/data/all_observed_drug.pkl'
+        with open(pkl_name_drug, 'rb') as f:
+                pkl_codes_drug = pickle.load(f)
+        all_observed_codes = pkl_codes_drug['drug']
+
+    if args.disease_code_system == 'phe_drug':
+        pkl_name_phe = 'src/data/all_observed_phe.pkl'
+        pkl_name_drug = 'src/data/all_observed_drug.pkl'
+        with open(pkl_name_phe, 'rb') as f:
+                pkl_codes_phe = pickle.load(f)
+        all_observed_codes_phe = pkl_codes_phe['phe']
+        with open(pkl_name_drug, 'rb') as f:
+                pkl_codes_drug = pickle.load(f)
+        all_observed_codes_drug = pkl_codes_drug['drug']
+        all_observed_codes = all_observed_codes_phe + all_observed_codes_drug
+
+    if args.disease_code_system == 'icd':
+        pkl_name = 'src/data/all_observed_icd.pkl'
+        with open(pkl_name, 'rb') as f:
+                pkl_codes = pickle.load(f)
+        all_observed_codes = process_codes(args, pkl_codes)
+        
+    # pkl_name = 'src/data/all_observed_{}.pkl'.format(args.disease_code_system)
+
+    # with open(pkl_name, 'rb') as f:
+    #     pkl_codes = pickle.load(f)
+    #     if '' in pkl_codes:
+    #         pkl_codes.remove('')
+    # if 'icd' in args.disease_code_system:
+    #     all_observed_codes = [get_code(args, code) for code in pkl_codes]
+    # else:
+    #     all_observed_codes = pkl_codes
+    # pdb.set_trace()
     print("Length of all_observed", len(all_observed_codes))
     all_codes_counts = dict(Counter(all_observed_codes))
     print(len(all_codes_counts))
@@ -105,6 +134,29 @@ def map_code_to_index_to_usa(args):
     usa_mapped_code_to_index_map[UNK_TOKEN]
     usa_mapped_code_to_index_map[PAD_TOKEN]
     return dict(usa_mapped_code_to_index_map)
+
+def process_codes(args, codes_dict, char=False):
+    code_type = codes_dict.key()
+    raw_codes = codes_dict.value()
+    codes = []
+    if code_type == 'icd':
+        if char:
+            trunc_level = max(args.icd8_level, args.icd10_level) + 1
+            return ['-'*(trunc_level-len(code)) + code[:trunc_level] for code in raw_codes]
+        raw_codes = [code.replace('.', '') for code in raw_codes]
+        for code in raw_codes:
+            if len(code) > 1 and code[0] == 'D' and not code[1].isdigit(): #this means it is a SKS code
+                processed_code = code[:args.icd10_level +1] # TODO: check replacement before truncation or after?
+            elif code.isdigit():
+                processed_code = code[:args.icd8_level]
+            elif (len(code) > 1 and (code[0] == 'Y' or code[0] == 'E')): # TODO: separate SKS or RPDR code by the data class not by filtering
+                processed_code = code[:args.icd8_level + 1]
+            else:
+                processed_code = code[:args.icd10_level]
+            codes.append(processed_code)
+    if code_type in ['drug', 'phe']:
+        codes = raw_codes
+    return codes
 
 
 # Depending on arg, build dataset

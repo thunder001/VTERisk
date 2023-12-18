@@ -16,14 +16,26 @@ sys.path.append(dirname(dirname(dirname(realpath(__file__)))))
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Build metadata json from tsv')
-    parser.add_argument('--tsv_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\global\\vte\\phecodes_100000.tsv',
+    parser.add_argument('--tsv_path', type=str, default='F:\\tmp_pancreatic\\temp_tsv\\global\\vte\\systemic_treatment.tsv',
                         help="Where all raw tsv files are stored")
     parser.add_argument('--demo_path', type=str, default='F:\\tmp_pancreatic\\temp_fst\\global\\raw\\vte\\demo_vte.feather',
                         help="Where all demographic data stored")
-    parser.add_argument('--out_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100000.json',
-                        help="Where all demographic data stored")
-    parser.add_argument('--delimiter', type=str, default=',')
+    parser.add_argument('--out_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\global\\vte\\medication.json',
+                        help="Where the processed data will be stored")
+    parser.add_argument('--data_source', type=str, default='drug')
+    parser.add_argument('--delimiter', type=str, default='\t')
     parser.add_argument('--head', type=int, default=None)
+    ###----- For test ------
+    # parser.add_argument('--tsv_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\global\\vte\\phecodes_100000.tsv',
+    #                     help="Where all raw tsv files are stored")
+    # parser.add_argument('--demo_path', type=str, default='F:\\tmp_pancreatic\\temp_fst\\global\\raw\\vte\\demo_vte.feather',
+    #                     help="Where all demographic data stored")
+    # parser.add_argument('--out_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100000.json',
+    #                     help="Where the processed data will be stored")
+    # parser.add_argument('--data_source', type=str, default='phe')
+    # parser.add_argument('--delimiter', type=str, default=',')
+    # parser.add_argument('--head', type=int, default=None)
+    ### -----------------------
     return parser.parse_args()
 
 
@@ -116,7 +128,7 @@ def tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict):
         assert not [p for p in metadata if any(['_' in e['admdate'] for e in metadata[p]['events']])]
         return metadata
 
-def drug_tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict, tdt_dict):
+def drug_tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict):
     print("Loading tsv data...")
     with open(tsv_filepath, "r") as tsv:
         if args.head is None:
@@ -125,15 +137,15 @@ def drug_tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict, tdt_dict):
             lines = []
             for _ in range(args.head):
                 lines.append(tsv.readline())
-        legend = lines[0].strip().split(args.delimiter)[:-1]
+        legend = lines[0].strip().split(args.delimiter)
         rows = [row.strip().split(args.delimiter) for row in lines[1:]]
         print(f'legend: {legend}')
-        assert all([j in legend for j in ["person_source_value", "drug_era_start_date", "drug_name"]])
+        assert all([j in legend for j in ['PatientICN', 'IssueDate', 'Generic']])
         metadata = {}
         key_translater = {
-            'person_source_value': 'PID',
-            'drug_era_start_date': 'admdate',
-            'drug_name': 'codes'
+            'PatientICN': 'PID',
+            'IssueDate': 'admdate',
+            'Generic': 'codes'
         }
         # all_codes = set()
 
@@ -148,7 +160,7 @@ def drug_tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict, tdt_dict):
             }
             row_dict.update({'admid': str(rowid).zfill(10)})
 
-            row_dict['code_type'] = 'ICD10'
+            row_dict['code_type'] = 'drug'
 
             # missing or being the header line
             if row_dict["PID"] == 'NaN' or row_dict["codes"] == '' or row_dict["codes"] == 'ICDCode' or \
@@ -180,10 +192,6 @@ def drug_tsv_to_json(tsv_filepath, dob_dict, dod_dict, gender_dict, tdt_dict):
         warning_flag = False
         for patient_id in tqdm(metadata.keys()):
             metadata[patient_id]['events'] = sorted(metadata[patient_id]['events'], key=lambda i: i['admdate'])
-            if patient_id in tdt_dict:
-                metadata[patient_id]['split_group'] = tdt_dict[patient_id] #! match icd data split
-            else:
-                metadata[patient_id]['split_group'] = 'NA'
             end_of_data = metadata[patient_id]['events'][0]['DOD'] \
                 if metadata[patient_id]['events'][0]['DOD'] != 'NA' and \
                    metadata[patient_id]['events'][0]['DOD'] != 'None' \
@@ -246,18 +254,17 @@ if __name__ == '__main__':
     file_path = args.tsv_path
     out_path = args.out_path
     print('Will save to {}'.format(out_path))
-    # # with open(out_path, 'w') as fw:
-    # #     assert os.path.isfile(out_path)
-    # #     print('Will save to {}'.format(out_path))
-    # #     pass
-    metadata = tsv_to_json(file_path, dob_dict, dod_dict, gender_dict)  # time-consuming!
-    # pdb.set_trace()
+    if args.data_source == "phe":
+        metadata = tsv_to_json(file_path, dob_dict, dod_dict, gender_dict)  # time-consuming!
+        # pdb.set_trace()
+
+    if args.data_source == "drug": 
+
+        metadata = drug_tsv_to_json(file_path, dob_dict, dod_dict, gender_dict)  # time-consuming!
+        # pdb.set_trace()
 
     with open(out_path, 'w') as fw:
         print("Saving data to {}".format(out_path))
         json.dump(metadata, fw, indent=None, sort_keys=True)
 
-    # if args.library_path:
-    #     with open(args.library_path, 'w') as fw:
-    #         pkl.dump(list(all_codes), fw)
     print('All done!')

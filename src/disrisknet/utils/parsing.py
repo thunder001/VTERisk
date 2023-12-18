@@ -70,7 +70,7 @@ def parse_args(args_str=None):
                         default='F:\\tmp_pancreatic\\temp_json\\global\\test',
                         help="Folder of source test datafiles")
     parser.add_argument('--data_file_idx', type=int, default=0, help="Specify which data file will be used")
-    parser.add_argument('--month_endpoints', nargs='+', default=[3, 6, 12], help="List of month endpoints at which to predict risk")
+    parser.add_argument('--month_endpoints', nargs='+', type=int, default=[3, 6], help="List of month endpoints at which to predict risk")
     parser.add_argument('--code_to_index_file', type=str, default='', help="File with code to index information")
     parser.add_argument('--pad_size', type=int, default=100, help="Padding the trajectories to how long for training. Default: use pad_size defined in dataset.")
     parser.add_argument('--use_only_diseases', action='store_true', default=False, help="use only disease code as event")
@@ -99,6 +99,7 @@ def parse_args(args_str=None):
     parser.add_argument('--hidden_dim', type=int, default=128, help="Representation size at end of network.")
     parser.add_argument('--pool_name', type=str, default='GlobalAvgPool', help='Pooling mechanism')
     parser.add_argument('--dropout', type=float, default=0, help="Dropout value for the neural network model.")
+    parser.add_argument('--neuron_norm', action='store_true', default=False, help='Wether or not to condition embeddings by their relative time.')
     parser.add_argument('--use_time_embed', action='store_true', default=True, help='Wether or not to condition embeddings by their relative time.')
     parser.add_argument('--use_age_in_cox', action='store_true', default=False, help='Wether or not to implement age directly into baseline models.')
     parser.add_argument('--add_age_neuron', action='store_true', default=False, help='Wether or not to add age neuron in abstract risk model')
@@ -120,8 +121,8 @@ def parse_args(args_str=None):
     parser.add_argument('--init_lr', type=float, default=0.001, help='initial learning rate [default: 0.001]')
     parser.add_argument('--lr_decay', type=float, default=1., help='Decay of learning rate [default: no decay (1.)]')
     parser.add_argument('--momentum', type=float, default=0, help='Momentum to use with SGD')
-    parser.add_argument('--weight_decay', type=float, default=0.001, help='L2 Regularization penaty [default: 0]')
-    parser.add_argument('--patience', type=int, default=5, help='number of epochs without improvement on dev before halving learning rate and reloading best model [default: 5]')
+    parser.add_argument('--weight_decay', type=float, default=0, help='L2 Regularization penaty [default: 0]')
+    parser.add_argument('--patience', type=int, default=3, help='number of epochs without improvement on dev before halving learning rate and reloading best model [default: 5]')
     parser.add_argument('--tuning_metric', type=str, default='36month_auroc_c', help='Metric to judge dev set results. Possible options include auc, loss, accuracy [default: loss]')
     parser.add_argument('--epochs', type=int, default=20, help='number of epochs for train [default: 256]')
     parser.add_argument('--linear_interpolate_risk', action='store_true', default=False, help='linearily interpolate risk from init year to actual year at cancer.') #
@@ -210,27 +211,6 @@ def md5(key):
     returns a hashed with md5 string of the key
     '''
     return hashlib.md5(key.encode()).hexdigest()
-
-def get_code(args, event, char=False):
-
-    if type(event) is dict:
-        code = event['codes']
-    else:
-        code = event
-
-    if char:
-        trunc_level = max(args.icd8_level, args.icd10_level) + 1
-        return '-'*(trunc_level-len(code)) + code[:trunc_level]
-    code = code.replace('.', '')
-    if len(code) > 1 and code[0] == 'D' and not code[1].isdigit(): #this means it is a SKS code
-        return code[:args.icd10_level +1] # TODO: check replacement before truncation or after?
-
-    elif code.isdigit():
-        return code[:args.icd8_level]
-    elif (len(code) > 1 and (code[0] == 'Y' or code[0] == 'E')): # TODO: separate SKS or RPDR code by the data class not by filtering
-        return code[:args.icd8_level +1]
-    else:
-        return code[:args.icd10_level]
 
 def parse_dispatcher_config(config):
     '''

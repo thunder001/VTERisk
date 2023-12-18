@@ -28,7 +28,8 @@ def train_model(train_data_loader, dev_data_loader, model, args):
         returns models : dict of models, containing best performing model setting from this call to train
     '''
 
-    logger_epoch = time_logger(1, hierachy=2, model_name=args.model_name, logger_dir = args.log_dir, log_name=args.log_name) if args.time_logger_verbose >= 2 else time_logger(0)
+    logger_train = time_logger(1, hierachy=2, model_name=args.model_name, logger_dir = args.log_dir, log_name=args.log_name) if args.time_logger_verbose >= 2 else time_logger(0)
+    logger_epoch = time_logger(1, hierachy=1, model_name=args.model_name, logger_dir = args.log_dir, log_name=args.log_name) if args.time_logger_verbose >= 2 else time_logger(0)
 
     start_epoch, epoch_stats, state_keeper, models, optimizers, tuning_key, num_epoch_sans_improvement \
         = get_train_variables(args, model)
@@ -38,6 +39,7 @@ def train_model(train_data_loader, dev_data_loader, model, args):
 
     for epoch in range(start_epoch, args.epochs + 1):
         print("-------------\nEpoch {}:\n".format(epoch))
+        logger_train.log("Epoch {}".format(epoch))
         for mode, data_loader in [('Train', train_data_loader), ('Dev', dev_data_loader)]:
             train_model = mode == 'Train'
             key_prefix = mode.lower()
@@ -101,11 +103,12 @@ def train_model(train_data_loader, dev_data_loader, model, args):
             # Reduce LR
             for name in optimizers:
                 optimizer = optimizers[name]
-                for param_group in optimizer.param_groups:
+                # print(optimizer.state_dict())
+                for param_group in optimizer.state_dict()['param_groups']:
                     param_group['lr'] *= args.lr_decay
-
+                print(f"Learning rate of optimier: {optimizer.state_dict()['param_groups'][0]['lr']}")
             # Update lr also in args for resumable usage
-            args.lr *= .5
+            args.lr *= args.lr_decay
             logger_epoch.log("Prepare for next epoch")
             logger_epoch.update()
 
@@ -162,7 +165,8 @@ def run_epoch(data_loader, train_model, truncate_epoch, models, optimizers, args
         logger.log("Truncate epoch @ batches: {}".format(num_batches_per_epoch))
     # print(num_batches_per_epoch)
     i = 0
-    tqdm_bar = tqdm(data_iter, total=num_batches_per_epoch)
+    miniters = int(num_batches_per_epoch / 10)
+    tqdm_bar = tqdm(data_iter, total=num_batches_per_epoch, miniters=miniters)
     for batch in data_iter:
         if batch is None:
             warnings.warn('Empty batch')

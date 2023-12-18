@@ -3,13 +3,13 @@ import tqdm
 import numpy as np
 import random
 import json
-import torch
 from collections import Counter
 from disrisknet.datasets.factory import RegisterDataset, UNK_TOKEN, PAD_TOKEN, NO_OP_TOKEN
 from disrisknet.datasets.filter import get_avai_trajectory_indices
 from torch.utils import data
 from disrisknet.utils.date import parse_date
-from disrisknet.utils.parsing import get_code, md5
+from disrisknet.utils.parsing import md5
+import pdb
 
 END_OF_TIME_DATE = datetime.datetime(2020, 12, 31, 0, 0)
 OUTCOME_CODE = ['VTE']
@@ -42,8 +42,10 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         shard_path = None
         count_missing_date = 0
         self.shard = True if type(metadata) is list else False
+        miniters = int(len(metadata) / 10) # 10% of the total iters
+        metadata_tqdm = tqdm.tqdm(metadata, miniters=miniters)
 
-        for patient in tqdm.tqdm(metadata):
+        for patient in metadata_tqdm:
             if self.shard:
                 (patient_not_encoded, current_shard_path), = patient.items()
 
@@ -152,11 +154,11 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         for idx in selected_idx:
             events_to_date = patient['events'][:idx + 1]
 
-            codes = [e['codes'] for e in events_to_date]
+            # codes = [e['codes'] for e in events_to_date]
             _, time_seq = self.get_time_seq(events_to_date, events_to_date[-1]['admit_date'])
             age, age_seq = self.get_time_seq(events_to_date, patient['dob'])
             y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, idx)
-            samples.append({'codes': codes,
+            samples.append({'events': events_to_date,
                             'y': y,
                             'y_seq': y_seq,
                             'y_mask': y_mask,
@@ -261,25 +263,26 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         samples = self.get_trajectory(patient)
         items = []
         for sample in samples:
-            code_str = " ".join(sample['codes'])
+            # pdb.set_trace()
+            codes = [e['codes'] for e in sample['events']]
+            code_str = " ".join(codes)
             # code_str = np.array(code_str).astype(np.string_)
-            x = [self.get_index_for_code(code, self.args.code_to_index_map) for code in sample['codes']]
+            x = [self.get_index_for_code(e, self.args.code_to_index_map) for e in sample['events']]
             char_x = [self.get_chars_for_code(code, self.args.char_to_index_map) for code in
                       sample['codes']] if self.args.use_char_embedding else [-1]
             time_seq = sample['time_seq'].tolist()
             age_seq = sample['age_seq'].tolist()
             item = {
-                'x': pad_arr(x, self.args.pad_size, 0),
+                'x': self.pad_arr(x, self.args.pad_size, 0),
                 # 'char_x': pad_arr(char_x, self.args.pad_size, np.zeros_like(char_x[0])) if self.args.use_char_embedding else [-1],
-                'time_seq': pad_arr(time_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
-                'age_seq': pad_arr(age_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
+                'time_seq': self.pad_arr(time_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
+                'age_seq': self.pad_arr(age_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
                 'code_str': code_str
             }
             for key in ['y', 'y_seq', 'y_mask', 'time_at_event', 'admit_date', 'exam', 'age', 'ks', 'outcome',
                         'days_to_censor', 'patient_id']:
                 item[key] = sample[key]
             items.append(item)
-
         return items
 
     def add_noise(self, samples):
@@ -311,8 +314,8 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
 
         return samples
 
-    def get_index_for_code(self, code, code_to_index_map):
-        code = get_code(self.args, code)
+    def get_index_for_code(self, event, code_to_index_map):
+        code = self.get_code(self.args, event)
         pad_index = len(code_to_index_map)
         if code == PAD_TOKEN:
             return pad_index
@@ -322,13 +325,39 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             return code_to_index_map[UNK_TOKEN]
 
     def get_chars_for_code(self, code, char_to_index_map):
-        code = get_code(self.args, code, char=True)
+        code = self.get_code(self.args, code, char=True)
         chars = list(code)
         vec = np.zeros(len(chars))
         for i, c in enumerate(chars):
             vec[i] = char_to_index_map[c] if c in char_to_index_map else char_to_index_map[UNK_TOKEN]
         return vec
 
+    def get_code(self, args, event, char=False):
 
-def pad_arr(arr, max_len, pad_value):
-    return np.array([pad_value] * (max_len - len(arr)) + arr[-max_len:])
+        if type(event) is dict:
+            code = event['codes']
+            if 'code_type' in event.keys():
+                code_type = event['code_type']
+            else:
+                code_type = 'phe_drug'
+        else:
+            code = event
+
+        if code_type == 'icd':
+            if char:
+                trunc_level = max(args.icd8_level, args.icd10_level) + 1
+                return '-'*(trunc_level-len(code)) + code[:trunc_level]
+            code = code.replace('.', '') 
+            if len(code) > 1 and code[0] == 'D' and not code[1].isdigit(): #this means it is a SKS code
+                return code[:args.icd10_level +1] # TODO: check replacement before truncation or after?
+
+            elif code.isdigit():
+                return code[:args.icd8_level]
+            elif (len(code) > 1 and (code[0] == 'Y' or code[0] == 'E')): # TODO: separate SKS or RPDR code by the data class not by filtering
+                return code[:args.icd8_level +1]
+            
+        if code_type in ['drug', 'phe_drug']:
+            return code
+
+    def pad_arr(self, arr, max_len, pad_value):
+        return np.array([pad_value] * (max_len - len(arr)) + arr[-max_len:])

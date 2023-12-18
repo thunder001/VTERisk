@@ -99,11 +99,11 @@ def parse_args():
     # parser.add_argument('--out_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100000_final.json',
     #                     help="Where all demographic data stored")
     
-    parser.add_argument('--raw_json_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100223.json',
+    parser.add_argument('--raw_json_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\global\\vte\\phe_drug\\combined.json',
                         help="Where all raw tsv files are stored")
     parser.add_argument('--cohort_path', type=str, default='F:\\tmp_pancreatic\\temp_fst\\global\\raw\\vte\\indexdate_score_and_vtedate.feather',
                         help="Where all demographic data stored")
-    parser.add_argument('--out_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100223_final.json',
+    parser.add_argument('--out_path', type=str, default='F:\\tmp_pancreatic\\temp_json\\global\\vte\\phe_drug\\combined_final.json',
                         help="Where all demographic data stored")
     
     return parser.parse_args()
