@@ -46,18 +46,29 @@ def get_avai_trajectory_indices(patient, events, feat_subgroup, split_group, arg
 
 def is_valid_trajectory(events_to_date, outcome_date, outcome, index_date, args, split_group):
 
-    if events_to_date[-1]['admit_date'] > index_date:
-        return False
+    code_type = events_to_date[-1].get('code_type')
+    admit_date = events_to_date[-1].get('admit_date')
+    # if code_type == 'drug': # For drug, including one month data after index date
+    #     if (admit_date - index_date).days > 30:
+    #         return False
+    # else:
+    #     if admit_date > index_date:
+    #         return False
+
+    if (admit_date - index_date).days > 5:
+            return False
     
     enough_events_counted =  len(events_to_date) >= args.min_events_length
     if not enough_events_counted:
         return False
     
+
     is_pos_in_time_horizon = (outcome_date - events_to_date[-1]['admit_date']).days < max(args.month_endpoints) * 30
-    is_pos_pre_cancer = events_to_date[-1]['admit_date'] < outcome_date
+    is_pos_pre_cancer = events_to_date[-1]['admit_date'] <= outcome_date
 
     is_valid_pos = outcome and is_pos_pre_cancer and  is_pos_in_time_horizon
 
+    is_valid_neg = False
     if split_group == 'test':
         is_valid_neg = not outcome
     else:

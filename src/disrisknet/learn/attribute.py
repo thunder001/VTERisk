@@ -2,7 +2,7 @@ import disrisknet.learn.train as train
 from copy import deepcopy
 from disrisknet.utils.learn import init_metrics_dictionary, get_dataset_loader, get_train_variables
 from collections import defaultdict
-from disrisknet.utils.parsing import CODE2DESCRIPTION, get_code
+from disrisknet.utils.parsing import CODE2DESCRIPTION
 from tqdm import tqdm
 from captum.attr import LayerIntegratedGradients, LayerGradientShap,  TokenReferenceBase, visualization
 import torch
@@ -147,3 +147,31 @@ def attribute_batch(explain_code, explain_age, batch, reference_indexes, args, m
         age_attribution_combined = []
     
     return batch['code_str'], attributions_code, (batch_age['age']//365).squeeze().tolist(), age_attribution_add, age_attribution_scale, age_attribution_combined
+
+
+def get_code(args, event, char=False):
+
+        if type(event) is dict:
+            code = event['codes']
+            if 'code_type' in event.keys():
+                code_type = event['code_type']
+            else:
+                code_type = 'phe_drug'
+        else:
+            code = event
+
+        if code_type == 'icd':
+            if char:
+                trunc_level = max(args.icd8_level, args.icd10_level) + 1
+                return '-'*(trunc_level-len(code)) + code[:trunc_level]
+            code = code.replace('.', '') 
+            if len(code) > 1 and code[0] == 'D' and not code[1].isdigit(): #this means it is a SKS code
+                return code[:args.icd10_level +1] # TODO: check replacement before truncation or after?
+
+            elif code.isdigit():
+                return code[:args.icd8_level]
+            elif (len(code) > 1 and (code[0] == 'Y' or code[0] == 'E')): # TODO: separate SKS or RPDR code by the data class not by filtering
+                return code[:args.icd8_level +1]
+            
+        if code_type in ['drug', 'phe_drug']:
+            return code

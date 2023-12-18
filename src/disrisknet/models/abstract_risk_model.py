@@ -121,6 +121,8 @@ class AbstractRiskModel(nn.Module):
             hidden = torch.cat((hidden, age_in_year), axis=-1)
         # pdb.set_trace()
         if self.args.add_ks_neuron:
+            if self.args.neuron_norm:
+                ks = F.normalize(batch['ks'], p=1.0, dim=0)
             ks = batch['ks'].int()
             ks = ks.reshape(len(ks), 1)
             hidden = torch.cat((hidden, ks), axis=-1)
