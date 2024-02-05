@@ -347,6 +347,9 @@ if __name__ == '__main__':
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data_100223_final.json'
     # train_dev_test_file_random_split(metafile)
 
+    metafile = 'F:\\tmp_pancreatic\\temp_json\\global\\vte\\phe\data_100223_final.json'
+    train_dev_test_file_random_split(metafile, train_size=0.6, dev_size=0.2, test_size=0.2)
+
     # ---- Add ks score to VTE dataset ------
     # metafile = 'F:\\tmp_pancreatic\\temp_json\\test\\vte\\data-10000.json'
     # ks_feather = 'F:\\tmp_pancreatic\\temp_fst\\global\\raw\\analytic_final_2000-2021.feather'
@@ -370,7 +373,8 @@ if __name__ == '__main__':
     # json.dump(combined_dict, open(combined_path, 'w'))
     # print('All done!')
 
-    metafile = 'F:\\tmp_pancreatic\\temp_json\\global\\vte\\phe_drug\\combined_final.json'
-    # train_dev_test_file_random_split(metafile)
+    # metafile = 'F:\\tmp_pancreatic\\temp_json\\global\\vte\\phe_drug\\combined_final.json'
+    # # train_dev_test_file_random_split(metafile)
 
-    train_dev_test_file_split(metafile)
+    # train_dev_test_file_split(metafile)
+

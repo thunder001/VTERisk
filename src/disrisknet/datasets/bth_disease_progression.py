@@ -17,7 +17,7 @@ BASELINE = []
 
 UNK_TOKEN = '<UNK>'
 PAD_TOKEN = '<PAD>'
-MAX_TIME_EMBED_PERIOD_IN_DAYS = 120 * 365
+MAX_TIME_EMBED_PERIOD_IN_DAYS = 12 * 365
 MIN_TIME_EMBED_PERIOD_IN_DAYS = 10
 
 SUMMARY_MSG = "Contructed BTH Disease Progression DiseaseRisk {} dataset with {} records, {} patients, and the following class balance \n {}"
@@ -136,25 +136,22 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
 
     def get_trajectory(self, patient):
 
-        # if self.shard:
-        #     patient['events'] = self.process_events(patient['events'], patient["obs_time_end"])
+        if self.shard:
+            patient['events'] = self.process_events(patient['events'], patient["obs_time_end"])
 
-        # if self.split_group in ['dev', 'test', 'attribute', 'all']:
-        #     if not self.args.no_random_sample_eval_trajectories:
-        #         selected_idx = [random.choice(patient['avai_indices']) for _ in range(self.args.max_eval_indices)]
-        #     else:
-        #         selected_idx = patient['avai_indices'][-self.args.max_eval_indices:]
-        # else:
-        #     selected_idx = [random.choice(patient['avai_indices'])]
-
-        assert(len(patient['avai_indices']) == 1), "Somethin is wrong. This patient has more than one trajectory!"
-        selected_idx = patient['avai_indices']
+        if self.split_group in ['dev', 'test', 'attribute', 'all']:
+            if not self.args.no_random_sample_eval_trajectories:
+                selected_idx = [random.choice(patient['avai_indices']) for _ in range(self.args.max_eval_indices)]
+            else:
+                selected_idx = patient['avai_indices'][-self.args.max_eval_indices:]
+        else:
+            selected_idx = [random.choice(patient['avai_indices'])]
 
         samples = []
         for idx in selected_idx:
             events_to_date = patient['events'][:idx + 1]
 
-            # codes = [e['codes'] for e in events_to_date]
+            codes = [e['codes'] for e in events_to_date]
             _, time_seq = self.get_time_seq(events_to_date, events_to_date[-1]['admit_date'])
             age, age_seq = self.get_time_seq(events_to_date, patient['dob'])
             y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, idx)
@@ -215,10 +212,8 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                     y_mask: [1, 1, 0, 0, 0]
                     time_at_event: 1,
         '''
-        # event = patient['events'][idx]
-        # days_to_censor = (patient['outcome_date'] - event['admit_date']).days
-        index_date = patient['index_date']
-        days_to_censor = (patient['outcome_date'] - index_date).days
+        event = patient['events'][idx]
+        days_to_censor = (patient['outcome_date'] - event['admit_date']).days
         num_time_steps, max_time = len(self.args.month_endpoints), max(self.args.month_endpoints)
         y = days_to_censor < (max_time * 30) and patient['outcome']
         y_seq = np.zeros(num_time_steps)
@@ -238,8 +233,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         args:
         - events: List of event dicts. Each dict must have a CODE and admit_date.
         '''
-        outcome_events = [e for e in events if any(icd == e['codes'] for icd in OUTCOME_CODE)
-                          and e['admit_date'] > index_date]
+        outcome_events = [e for e in events if any(icd == e['codes'] for icd in OUTCOME_CODE)]
 
         if len(outcome_events) > 0:
             ever_develops_outcome = True
@@ -263,7 +257,6 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         samples = self.get_trajectory(patient)
         items = []
         for sample in samples:
-            # pdb.set_trace()
             codes = [e['codes'] for e in sample['events']]
             code_str = " ".join(codes)
             # code_str = np.array(code_str).astype(np.string_)
