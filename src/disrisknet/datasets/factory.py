@@ -57,6 +57,17 @@ def build_code_to_index_map(args):
         all_observed_codes_drug = pkl_codes_drug['drug']
         all_observed_codes = all_observed_codes_phe + all_observed_codes_drug
 
+    if args.disease_code_system == 'phe_lab':
+        pkl_name_phe = 'src/data/all_observed_phe.pkl'
+        pkl_name_lab = 'src/data/all_observed_lab.pkl'
+        with open(pkl_name_phe, 'rb') as f:
+                pkl_codes_phe = pickle.load(f)
+        all_observed_codes_phe = pkl_codes_phe['phe']
+        with open(pkl_name_lab, 'rb') as f:
+                pkl_codes_lab = pickle.load(f)
+        all_observed_codes_lab = pkl_codes_lab['lab']
+        all_observed_codes = all_observed_codes_phe + all_observed_codes_lab
+
     if args.disease_code_system == 'icd':
         pkl_name = 'src/data/all_observed_icd.pkl'
         with open(pkl_name, 'rb') as f:
