@@ -82,6 +82,7 @@ def parse_args(args_str=None):
     parser.add_argument('--char_dim', type=int, default=25, help="Dimension to use for char embedding.")
     parser.add_argument('--max_events_length', type=int, default=200, help="Max num events to use (pkl generation)")
     parser.add_argument('--min_events_length', type=int, default=5, help="Min num events to include a patient")
+    parser.add_argument('--max_year_before_index', type=int, default=5, help="Min num events to include a patient")
     parser.add_argument('--exclusion_interval', type=int, default=0, help="Exclude events before end of trajectory, default: 0 (month).")
     parser.add_argument('--code_to_index_map', type=str, default=None, help='filename of model code_to_index_map to load[default: None]')
 

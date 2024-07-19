@@ -332,7 +332,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             if 'code_type' in event.keys():
                 code_type = event['code_type']
             else:
-                code_type = 'phe_drug'
+                code_type = 'other'
         else:
             code = event
 
@@ -349,7 +349,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             elif (len(code) > 1 and (code[0] == 'Y' or code[0] == 'E')): # TODO: separate SKS or RPDR code by the data class not by filtering
                 return code[:args.icd8_level +1]
             
-        if code_type in ['drug', 'phe_drug']:
+        if code_type in ['drug', 'phe_drug', 'lab', 'other']:
             return code
 
     def pad_arr(self, arr, max_len, pad_value):

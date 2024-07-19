@@ -74,17 +74,6 @@ def build_code_to_index_map(args):
                 pkl_codes = pickle.load(f)
         all_observed_codes = process_codes(args, pkl_codes)
         
-    # pkl_name = 'src/data/all_observed_{}.pkl'.format(args.disease_code_system)
-
-    # with open(pkl_name, 'rb') as f:
-    #     pkl_codes = pickle.load(f)
-    #     if '' in pkl_codes:
-    #         pkl_codes.remove('')
-    # if 'icd' in args.disease_code_system:
-    #     all_observed_codes = [get_code(args, code) for code in pkl_codes]
-    # else:
-    #     all_observed_codes = pkl_codes
-    # pdb.set_trace()
     print("Length of all_observed", len(all_observed_codes))
     all_codes_counts = dict(Counter(all_observed_codes))
     print(len(all_codes_counts))
