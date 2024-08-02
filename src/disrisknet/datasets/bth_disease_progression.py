@@ -214,14 +214,24 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         '''
         event = patient['events'][idx]
         days_to_censor = (patient['outcome_date'] - event['admit_date']).days
-        num_time_steps, max_time = len(self.args.month_endpoints), max(self.args.month_endpoints)
-        y = days_to_censor < (max_time * 30) and patient['outcome']
-        y_seq = np.zeros(num_time_steps)
-        time_at_event = min([i for i, mo in enumerate(self.args.month_endpoints)
-                             if days_to_censor < (mo * 30)]) if days_to_censor < (max_time * 30) else num_time_steps - 1
-        if y:
-            y_seq[time_at_event:] = 1
-        y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))
+        if self.args.pred_day:
+            num_time_steps, max_time = len(self.args.day_endpoints), max(self.args.day_endpoints)
+            y = days_to_censor < max_time and patient['outcome']
+            y_seq = np.zeros(num_time_steps)
+            time_at_event = min([i for i, mo in enumerate(self.args.day_endpoints)
+                                if days_to_censor < (mo * 30)]) if days_to_censor < (max_time * 30) else num_time_steps - 1
+            if y:
+                y_seq[time_at_event:] = 1
+            y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))
+        else:
+            num_time_steps, max_time = len(self.args.month_endpoints), max(self.args.month_endpoints)
+            y = days_to_censor < (max_time * 30) and patient['outcome']
+            y_seq = np.zeros(num_time_steps)
+            time_at_event = min([i for i, mo in enumerate(self.args.month_endpoints)
+                                if days_to_censor < (mo * 30)]) if days_to_censor < (max_time * 30) else num_time_steps - 1
+            if y:
+                y_seq[time_at_event:] = 1
+            y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))
 
         assert time_at_event >= 0 and len(y_seq) == len(y_mask)
         return y, y_seq.astype('float64'), y_mask.astype('float64'), time_at_event, days_to_censor

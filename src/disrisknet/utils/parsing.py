@@ -70,6 +70,8 @@ def parse_args(args_str=None):
                         default='F:\\tmp_pancreatic\\temp_json\\global\\test',
                         help="Folder of source test datafiles")
     parser.add_argument('--data_file_idx', type=int, default=0, help="Specify which data file will be used")
+    parser.add_argument('--pred_day', action='store_true', default=True, help="Specify which data file will be used")
+    parser.add_argument('--day_endpoints', nargs='+', type=int, default=[7, 14], help="List of month endpoints at which to predict risk")
     parser.add_argument('--month_endpoints', nargs='+', type=int, default=[3, 6], help="List of month endpoints at which to predict risk")
     parser.add_argument('--code_to_index_file', type=str, default='', help="File with code to index information")
     parser.add_argument('--pad_size', type=int, default=100, help="Padding the trajectories to how long for training. Default: use pad_size defined in dataset.")
