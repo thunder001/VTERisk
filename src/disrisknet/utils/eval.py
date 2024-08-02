@@ -39,9 +39,10 @@ def compute_eval_metrics(args, loss, golds, patient_golds, preds,
 
     for independent_eval in annual_eval_types:
 
-        independent_eval_label = 'i' if independent_eval else 'c'  
+        independent_eval_label = 'i' if independent_eval else 'c'
+        time_points = args.day_endpoints if args.pred_day else args.month_endpoints  
 
-        for index, time in enumerate(args.month_endpoints):
+        for index, time in enumerate(time_points):
             probs_for_eval, golds_for_eval = [], []
 
             for prob_arr, censor_time, gold in zip(probs, censor_times, golds):
