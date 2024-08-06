@@ -160,7 +160,7 @@ class AbstractRiskModel(nn.Module):
             if self.args.neuron_norm:
                 bmi = F.normalize(batch['bmi'], p=1.0, dim=0)
             bmi = batch['bmi'].int()
-            bmi = sex.reshape(len(bmi), 1)
+            bmi = bmi.reshape(len(bmi), 1)
             hidden = torch.cat((hidden, bmi), axis=-1)                   
             
         logit = self.prob_of_failure_layer(hidden)
