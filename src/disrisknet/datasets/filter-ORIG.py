@@ -34,10 +34,8 @@ def get_avai_trajectory_indices(patient, events, feat_subgroup, split_group, arg
             if is_valid_age(events[idx]['admit_date']):
                 valid_indices.append(idx)
                 days_to_censor = (patient['outcome_date']-events[idx]['admit_date']).days
-                if args.pred_day:
-                    y = (days_to_censor < max(args.day_endpoints) and patient['outcome']) or y
-                else:
-                    y = (days_to_censor < ( max(args.month_endpoints) * 30) and patient['outcome']) or y
+                y = (days_to_censor < ( max(args.day_endpoints) ) and patient['outcome']) or y
+
     if not valid_indices:
         return [], None
     else:
@@ -57,8 +55,7 @@ def is_valid_trajectory(events_to_date, index_date, outcome_date, outcome, args,
     if split_group == 'test' and last_admit_date < index_date:
         return False
     else:
-        time_gap = (outcome_date - last_admit_date).days
-        is_pos_in_time_horizon = time_gap < max(args.day_endpoints) if args.pred_day else time_gap < max(args.month_endpoints) * 30
+        is_pos_in_time_horizon = (outcome_date - last_admit_date).days < max(args.day_endpoints) 
         is_pos_pre_outcome = last_admit_date <= outcome_date
         
         is_valid_pos = outcome and is_pos_pre_outcome and  is_pos_in_time_horizon

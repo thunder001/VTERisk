@@ -69,14 +69,10 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                 continue
 
             obs_time_end = parse_date(patient_metadata[patient_id]['end_of_data'])
-            dob = parse_date(patient_metadata[patient_id]['birthdate'])            
+            dob = parse_date(patient_metadata[patient_id]['birthdate'])
             index_date = parse_date(patient_metadata[patient_id]['indexdate'])
-            dx_date = parse_date(patient_metadata[patient_id]['dxdate'])
             ks = patient_metadata[patient_id]['ks_mod_score']
             sex = patient_metadata[patient_id]['gender']
-            bmi = patient_metadata[patient_id]['BMI']
-            race = patient_metadata[patient_id]['Race']
-
             events = self.process_events(patient_metadata[patient_id]['events'], obs_time_end)
             outcome, outcome_date = self.get_outcome_date(events, index_date, 
                                                                      end_of_date=obs_time_end)
@@ -86,10 +82,8 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                                  'split_group': patient_metadata[patient_id]['split_group'],
                                  'obs_time_end': obs_time_end,
                                  'index_date': index_date,
-                                 'dx_date': dx_date,
                                  'ks': ks,
-                                 'sex': sex,
-                                 'bmi': bmi})
+                                 'sex': sex})
             
             feat_subgroup = {'birth_date': patient_metadata[patient_id]['birthdate']}
 
@@ -162,7 +156,6 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             codes = [e['codes'] for e in events_to_date]
             _, time_seq = self.get_time_seq(events_to_date, events_to_date[-1]['admit_date'])
             age, age_seq = self.get_time_seq(events_to_date, patient['dob'])
-            dx, dx_seq = self.get_time_seq(events_to_date, patient['dx_date'])
             y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, idx)
             samples.append({'events': events_to_date,
                             'y': y,
@@ -173,13 +166,10 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                             'patient_id': patient['patient_id'],
                             'days_to_censor': days_to_censor,
                             'time_seq': time_seq,
-                            'dx_seq': dx_seq,
-                            'dx': dx,
                             'age_seq': age_seq,
                             'age': age,
                             'ks': patient['ks'],
                             'sex': patient['sex'],
-                            'bmi': patient['bmi'],
                             'admit_date': events_to_date[-1]['admit_date'].isoformat(),
                             'exam': str(events_to_date[-1]['admid'])})
 
@@ -227,26 +217,15 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         '''
         event = patient['events'][idx]
         days_to_censor = (patient['outcome_date'] - event['admit_date']).days
-       
-        if self.args.pred_day:
-            num_time_steps, max_time = len(self.args.day_endpoints), max(self.args.day_endpoints)
-            y = days_to_censor < max_time and patient['outcome']
-            y_seq = np.zeros(num_time_steps)
-            time_at_event = min([i for i, mo in enumerate(self.args.day_endpoints)
-                                if days_to_censor < (mo * 30)]) if days_to_censor < (max_time * 30) else num_time_steps - 1
-            if y:
-                y_seq[time_at_event:] = 1
-            y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))
-        else:
-            num_time_steps, max_time = len(self.args.month_endpoints), max(self.args.month_endpoints)
-            y = days_to_censor < (max_time * 30) and patient['outcome']
-            y_seq = np.zeros(num_time_steps)
-            time_at_event = min([i for i, mo in enumerate(self.args.month_endpoints)
-                                if days_to_censor < (mo * 30)]) if days_to_censor < (max_time * 30) else num_time_steps - 1
-            if y:
-                y_seq[time_at_event:] = 1
-            y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))               
-    
+        num_time_steps, max_time = len(self.args.month_endpoints), max(self.args.month_endpoints)
+        y = days_to_censor < (max_time * 30) and patient['outcome']
+        y_seq = np.zeros(num_time_steps)
+        time_at_event = min([i for i, mo in enumerate(self.args.month_endpoints)
+                             if days_to_censor < (mo * 30)]) if days_to_censor < (max_time * 30) else num_time_steps - 1
+        if y:
+            y_seq[time_at_event:] = 1
+        y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))
+
         assert time_at_event >= 0 and len(y_seq) == len(y_mask)
         return y, y_seq.astype('float64'), y_mask.astype('float64'), time_at_event, days_to_censor
 
@@ -289,17 +268,15 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                       sample['codes']] if self.args.use_char_embedding else [-1]
             time_seq = sample['time_seq'].tolist()
             age_seq = sample['age_seq'].tolist()
-            dx_seq = sample['dx_seq'].tolist()
-
             item = {
                 'x': self.pad_arr(x, self.args.pad_size, 0),
                 # 'char_x': pad_arr(char_x, self.args.pad_size, np.zeros_like(char_x[0])) if self.args.use_char_embedding else [-1],
                 'time_seq': self.pad_arr(time_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
-                'age_seq': self.pad_arr(age_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)), 
-                'dx_seq': self.pad_arr(dx_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
+                'age_seq': self.pad_arr(age_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
                 'code_str': code_str
             }
-            for key in ['y', 'y_seq', 'y_mask', 'time_at_event', 'admit_date', 'exam', 'age', 'dx', 'ks', 'sex', 'bmi', 'outcome',  'days_to_censor', 'patient_id']:
+            for key in ['y', 'y_seq', 'y_mask', 'time_at_event', 'admit_date', 'exam', 'age', 'ks', 'sex', 'outcome',
+                        'days_to_censor', 'patient_id']:
                 item[key] = sample[key]
             items.append(item)
         return items
@@ -375,7 +352,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             elif (len(code) > 1 and (code[0] == 'Y' or code[0] == 'E')): # TODO: separate SKS or RPDR code by the data class not by filtering
                 return code[:args.icd8_level +1]
             
-        if code_type in ['drug', 'phe_drug', 'lab', 'phe_lab', 'other']:
+        if code_type in ['drug', 'phe_drug', 'lab', 'other']:
             return code
 
     def pad_arr(self, arr, max_len, pad_value):

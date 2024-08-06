@@ -245,7 +245,11 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                                 if days_to_censor < (mo * 30)]) if days_to_censor < (max_time * 30) else num_time_steps - 1
             if y:
                 y_seq[time_at_event:] = 1
-            y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))               
+            y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))
+        
+        
+        
+    
     
         assert time_at_event >= 0 and len(y_seq) == len(y_mask)
         return y, y_seq.astype('float64'), y_mask.astype('float64'), time_at_event, days_to_censor

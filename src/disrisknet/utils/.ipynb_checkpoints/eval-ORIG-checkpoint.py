@@ -41,7 +41,7 @@ def compute_eval_metrics(args, loss, golds, patient_golds, preds,
 
         independent_eval_label = 'i' if independent_eval else 'c'  
 
-        for index, time in enumerate(args.day_endpoints):
+        for index, time in enumerate(args.month_endpoints):
             probs_for_eval, golds_for_eval = [], []
 
             for prob_arr, censor_time, gold in zip(probs, censor_times, golds):
@@ -51,20 +51,20 @@ def compute_eval_metrics(args, loss, golds, patient_golds, preds,
                     golds_for_eval.append(label)
             
             if args.eval_auroc:
-                key_name = '{}_{}day_auroc_{}'.format(key_prefix, time, independent_eval_label)
+                key_name = '{}_{}month_auroc_{}'.format(key_prefix, time, independent_eval_label)
                 auc, curve = compute_auroc(golds_for_eval, probs_for_eval)
                 log_statement += " -{}: {} (n={} , c={} )\n".format(key_name, auc, len(golds_for_eval), sum(golds_for_eval))
                 stats_dict[key_name].append(auc)
                 stats_dict[key_name+'_curve'].append(curve)
 
             if args.eval_auprc:
-                key_name = '{}_{}day_auprc_{}'.format(key_prefix, time, independent_eval_label)
+                key_name = '{}_{}month_auprc_{}'.format(key_prefix, time, independent_eval_label)
                 auc, fig_curve = compute_auprc(golds_for_eval, probs_for_eval)
                 log_statement += " -{}: {} (n={} , c={} )\n".format(key_name, auc, len(golds_for_eval), sum(golds_for_eval))    
                 stats_dict[key_name].append(auc)
                 stats_dict[key_name+'_curve'].append(fig_curve)
 
-                key_name = '{}_{}day_auprc_corrected_{}'.format(key_prefix, time, independent_eval_label)
+                key_name = '{}_{}month_auprc_corrected_{}'.format(key_prefix, time, independent_eval_label)
                 auc, fig_curve = compute_auprc_corrected(golds_for_eval, probs_for_eval, golds)
                 log_statement += " -{}: {} (n={} , c={} )\n".format(key_name, auc, len(golds_for_eval),
                                                                   sum(golds_for_eval))
@@ -72,13 +72,13 @@ def compute_eval_metrics(args, loss, golds, patient_golds, preds,
                 stats_dict[key_name + '_curve'].append(fig_curve)
 
             if args.eval_mcc:
-                key_name = '{}_{}day_mcc_{}'.format(key_prefix, time, independent_eval_label)
+                key_name = '{}_{month_mcc_{}'.format(key_prefix, time, independent_eval_label)
                 mcc, fig_curve = compute_mcc(golds_for_eval, probs_for_eval)
                 log_statement += " -{}: {} (n={} , c={} )\n".format(key_name, mcc, len(golds_for_eval), sum(golds_for_eval))
                 stats_dict[key_name].append(mcc)
                 stats_dict[key_name+'_curve'].append(fig_curve)
 
-                key_name = '{}_{}day_mcc_corrected_{}'.format(key_prefix, time, independent_eval_label)
+                key_name = '{}_{}month_mcc_corrected_{}'.format(key_prefix, time, independent_eval_label)
                 mcc, fig_curve = compute_mcc_corrected(golds_for_eval, probs_for_eval, golds)
                 log_statement += " -{}: {} (n={} , c={} )\n".format(key_name, mcc, len(golds_for_eval), sum(golds_for_eval))
                 stats_dict[key_name].append(mcc)

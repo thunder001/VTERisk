@@ -37,16 +37,8 @@ class AbstractRiskModel(nn.Module):
         self.pool = get_pool(args.pool_name)(args)
         self.dropout = nn.Dropout(p=args.dropout)
         if args.model_name not in ['cox', 'add_cox']:
-            hidden_dim =  args.hidden_dim
-            if self.args.add_age_neuron:
-                hidden_dim = hidden_dim+1  
-            if self.args.add_ks_neuron: 
-                hidden_dim = hidden_dim+1 
-            if self.args.add_sex_neuron: 
-                hidden_dim = hidden_dim+1 
-            if self.args.add_bmi_neuron: 
-                hidden_dim = hidden_dim+1 
-            self.prob_of_failure_layer = Cumulative_Probability_Layer(hidden_dim, len(args.day_endpoints), args)
+            hidden_dim = args.hidden_dim+1 if self.args.add_age_neuron or self.args.add_ks_neuron else args.hidden_dim
+            self.prob_of_failure_layer = Cumulative_Probability_Layer(hidden_dim, len(args.month_endpoints), args)
 
         if args.use_time_embed:
             self.t_embed_add_fc = nn.Linear(args.time_embed_dim, args.hidden_dim)
@@ -55,11 +47,6 @@ class AbstractRiskModel(nn.Module):
         if args.use_age_embed:
             self.a_embed_add_fc = nn.Linear(args.time_embed_dim, args.hidden_dim)
             self.a_embed_scale_fc = nn.Linear(args.time_embed_dim, args.hidden_dim)
-        
-        if args.use_dxtime_embed:
-            self.d_embed_add_fc = nn.Linear(args.time_embed_dim, args.hidden_dim)
-            self.d_embed_scale_fc = nn.Linear(args.time_embed_dim, args.hidden_dim)    
-            
 
         if args.pred_mask:
             self.mask_embedding = torch.nn.Embedding(2, args.hidden_dim, padding_idx=1)
@@ -81,10 +68,8 @@ class AbstractRiskModel(nn.Module):
     def condition_on_pos_embed(self, x, embed, embed_type='time'):
         if embed_type == 'time':
             return self.t_embed_scale_fc(embed) * x + self.t_embed_add_fc(embed)
-        if embed_type == 'age':
+        elif embed_type == 'age':
             return self.a_embed_scale_fc(embed) * x + self.a_embed_add_fc(embed)
-        if embed_type == 'dxtime':
-            return self.d_embed_scale_fc(embed) * x + self.d_embed_add_fc(embed)
         else:
             raise NotImplementedError("Embed type {} not supported".format(embed_type))
 
@@ -92,7 +77,7 @@ class AbstractRiskModel(nn.Module):
     def get_pred_mask_loss(self, seq_hidden, x, is_mask):
         if is_mask.sum().item() == 0:
             return 0
-        seq_hidden = seq_hidden.transpose(1,2) # CHANGED FROM 2 to 3
+        seq_hidden = seq_hidden.transpose(1,2)
         B, N, D_n = seq_hidden.size()
         hidden_for_mask = torch.masked_select(seq_hidden, is_mask.byte()).view(-1, D_n)
         pred_x = self.pred_masked_fc(hidden_for_mask)
@@ -112,7 +97,7 @@ class AbstractRiskModel(nn.Module):
         return token_embed
 
     def forward(self, x, batch=None):
-        pad_token_indx = 0 # Note, change this to be -1 or something not as terrible.
+        pad_token_indx = -1 # Note, change this to be -1 or something not as terrible.
         embed_x = self.get_embeddings(x, batch)
         obs_seq = x != pad_token_indx
 
@@ -123,10 +108,6 @@ class AbstractRiskModel(nn.Module):
         if self.args.use_age_embed:
             age = batch['age_seq'].float()
             embed_x = self.condition_on_pos_embed(embed_x, age, 'age')
-       
-        if self.args.use_dxtime_embed:
-            dxtime = batch['dx_seq'].float()
-            embed_x = self.condition_on_pos_embed(embed_x, dxtime, 'dxtime')
 
         if self.args.pred_mask:
             raise Exception ("Prediction mask is not enabled.")
@@ -134,7 +115,8 @@ class AbstractRiskModel(nn.Module):
 
         seq_hidden = self.encode_trajectory(embed_x, batch)
         seq_hidden = seq_hidden.transpose(1,2)
-                    # changed from 2 to 3
+        
+        # changed from 2 to 3
         
         hidden = self.dropout(self.pool(seq_hidden))
         if self.args.add_age_neuron:
@@ -151,17 +133,10 @@ class AbstractRiskModel(nn.Module):
             
         if self.args.add_sex_neuron:
             if self.args.neuron_norm:
-                sex = F.normalize(batch['sex'], p=1.0, dim=0)
+                ks = F.normalize(batch['sex'], p=1.0, dim=0)
             sex = batch['sex'].int()
             sex = sex.reshape(len(sex), 1)
             hidden = torch.cat((hidden, sex), axis=-1)            
-            
-        if self.args.add_bmi_neuron:
-            if self.args.neuron_norm:
-                bmi = F.normalize(batch['bmi'], p=1.0, dim=0)
-            bmi = batch['bmi'].int()
-            bmi = sex.reshape(len(bmi), 1)
-            hidden = torch.cat((hidden, bmi), axis=-1)                   
             
         logit = self.prob_of_failure_layer(hidden)
 
