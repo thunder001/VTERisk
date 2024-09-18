@@ -70,10 +70,9 @@ def parse_args(args_str=None):
                         default='F:\\tmp_pancreatic\\temp_json\\global\\test',
                         help="Folder of source test datafiles")
     parser.add_argument('--data_file_idx', type=int, default=0, help="Specify which data file will be used")
-   
     parser.add_argument('--pred_day', action='store_true', default=True, help="Specify which data file will be used")
-    parser.add_argument('--day_endpoints', nargs='+', type=int, default=[7, 14], help="List of month endpoints at which to predict risk")    
-    parser.add_argument('--month_endpoints', nargs='+', type=int, default=[3,6], help="List of month endpoints at which to predict risk")
+    parser.add_argument('--day_endpoints', nargs='+', type=int, default=[7, 14], help="List of month endpoints at which to predict risk")
+    parser.add_argument('--month_endpoints', nargs='+', type=int, default=[3, 6], help="List of month endpoints at which to predict risk")
     parser.add_argument('--code_to_index_file', type=str, default='', help="File with code to index information")
     parser.add_argument('--pad_size', type=int, default=100, help="Padding the trajectories to how long for training. Default: use pad_size defined in dataset.")
     parser.add_argument('--use_only_diseases', action='store_true', default=False, help="use only disease code as event")
@@ -110,9 +109,14 @@ def parse_args(args_str=None):
     parser.add_argument('--add_ks_neuron', action='store_true', default=False, help='Wether or not to add ks neuron in abstract risk model')
     parser.add_argument('--add_sex_neuron', action='store_true', default=False, help='Wether or not to add sex neuron in abstract risk model')
     parser.add_argument('--add_bmi_neuron', action='store_true', default=False, help='Wether or not to add bmi neuron in abstract risk model')
-    
+    parser.add_argument('--add_race_neuron', action='store_true', default=False, help='Wether or not to add bmi neuron in abstract risk model')
+        
     parser.add_argument('--use_age_embed', action='store_true', default=False, help='Wether or not to condition embeddings by their relative time.')
     parser.add_argument('--use_dxtime_embed', action='store_true', default=False, help='Wether or not to condition embeddings by time from diagnosis date')
+    parser.add_argument('--dxseq_event', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from diagnosis date')
+    parser.add_argument('--days', type=int, default=30, help="lookfwd window days")
+
+
     parser.add_argument('--time_embed_dim', type=int, default=128, help="Representation size at for time embeddings.")
     parser.add_argument('--pred_mask', action='store_true', default=False, help='Pred masked out tokens.')
     parser.add_argument('--mask_prob', type=float, default=0, help="Dropout value for the neural network model.")

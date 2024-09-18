@@ -88,8 +88,8 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                                  'index_date': index_date,
                                  'dx_date': dx_date,
                                  'ks': ks,
-                                 'race':race,
                                  'sex': sex,
+                                 'race': race,
                                  'bmi': bmi})
             
             feat_subgroup = {'birth_date': patient_metadata[patient_id]['birthdate']}
@@ -146,19 +146,32 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
     def get_trajectory(self, patient):
 
         if self.shard:
-            patient['events'] = self.process_events(patient['events'], patient["obs_time_end"])
+            patient['events'] = self.process_events(patient['events'], patient["obs_time_end"]) # changed from 
         
         events = patient['events']
         ev_dates = [events[i]['admit_date'] for i in range(len(events))]
                 
-        lookback = patient['index_date'] + datetime.timedelta(self.args.days)    
+        if self.args.looking_backward: 
+            if patient['outcome']:
+                lookback = patient['outcome_date'] - datetime.timedelta(self.args.days)
+            else:
+                if self.args.med_from_index: 
+                    expected_date = 240 + random.choice(np.arange(-self.args.days,self.args.days))
+                    lookback = patient['index_date'] + datetime.timedelta(int(expected_date) )       
+                else:
+                    expected_date = 240 + random.choice(np.arange(-240,760))
+                    lookback = patient['index_date'] + datetime.timedelta(int(expected_date) )   
+        elif self.args.looking_forward:
+            lookback = patient['index_date'] + datetime.timedelta(self.args.days)
+            
         selected_idx =  [np.argmin( [abs(ev_dates[i] - lookback) for i in range(len(ev_dates ))])]    
-        
-        samples = []
+            
+        samples = []        
         for idx in selected_idx:
             events_to_date = patient['events'][:idx + 1]
-
+            
             codes = [e['codes'] for e in events_to_date]
+
             _, time_seq = self.get_time_seq(events_to_date, events_to_date[-1]['admit_date'])
             age, age_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['dob'])
  
@@ -166,8 +179,9 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                 dx, dx_seq = self.get_event_seq(patient['dx_date'],patient['dob'])            
             else:
                 dx, dx_seq = self.get_event_seq( patient['index_date'] ,patient['dob'])        
+            
+            y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, idx)             
 
-            y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, idx)
             samples.append({'events': events_to_date,
                             'y': y,
                             'y_seq': y_seq,
@@ -187,8 +201,8 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                             'race': patient['race'],
                             'admit_date': events_to_date[-1]['admit_date'].isoformat(),
                             'exam': str(events_to_date[-1]['admid'])})
-
-        return self.add_noise(samples)
+    
+            return self.add_noise(samples)
 
     def get_time_seq(self, events, reference_date):
         deltas = np.array([abs((reference_date - event['admit_date']).days) for event in events])
@@ -198,7 +212,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
         positional_embeddings = np.cos(deltas * multipliers)
         return max(deltas), positional_embeddings
-     
+    
     def get_event_seq(self, event, reference_date):
         deltas = np.array([abs((reference_date - event).days)])
         multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
@@ -207,6 +221,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
         positional_embeddings = np.cos(deltas * multipliers)        
         return max(deltas), positional_embeddings
+    
     
     def class_count(self):
         # Implement for class balance
@@ -241,25 +256,29 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         '''
         event = patient['events'][idx]
         days_to_censor = (patient['outcome_date'] - event['admit_date']).days
-        if self.args.pred_day:
-            num_time_steps, max_time = len(self.args.day_endpoints), max(self.args.day_endpoints)
-            y = days_to_censor < max_time and patient['outcome']
-            y_seq = np.zeros(num_time_steps)
-            time_at_event = min([i for i, mo in enumerate(self.args.day_endpoints)
-                                if days_to_censor < (mo * 30)]) if days_to_censor < (max_time * 30) else num_time_steps - 1
+        num_time_steps, max_time = len(self.args.month_endpoints), max(self.args.month_endpoints)
+        
+        time_at_event = min([i for i, mo in enumerate(self.args.month_endpoints)
+                             if days_to_censor < (mo * 30)]) if days_to_censor < (max_time * 30) else num_time_steps - 1
+        
+        if self.args.looking_backward:
+            y = patient['outcome']
+            y_seq = np.ones(num_time_steps)
+            
             if y:
-                y_seq[time_at_event:] = 1
-            y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))
+                y_seq = np.ones(num_time_steps)
+            else:
+                y_seq = np.zeros(num_time_steps)
+                       
         else:
-            num_time_steps, max_time = len(self.args.month_endpoints), max(self.args.month_endpoints)
             y = days_to_censor < (max_time * 30) and patient['outcome']
             y_seq = np.zeros(num_time_steps)
-            time_at_event = min([i for i, mo in enumerate(self.args.month_endpoints)
-                                if days_to_censor < (mo * 30)]) if days_to_censor < (max_time * 30) else num_time_steps - 1
+          
             if y:
                 y_seq[time_at_event:] = 1
-            y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))
-
+        
+        y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))     
+            
         assert time_at_event >= 0 and len(y_seq) == len(y_mask)
         return y, y_seq.astype('float64'), y_mask.astype('float64'), time_at_event, days_to_censor
 
@@ -312,7 +331,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                 'dx_seq': self.pad_arr(dx_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
                 'code_str': code_str
             }
-            for key in ['y', 'y_seq', 'y_mask', 'time_at_event', 'admit_date', 'exam', 'age', 'dx', 'ks', 'sex', 'bmi', 'outcome',  'days_to_censor', 'patient_id']:
+            for key in ['y', 'y_seq', 'y_mask', 'time_at_event', 'admit_date', 'exam', 'age', 'dx', 'ks', 'sex', 'bmi', 'race', 'outcome',  'days_to_censor', 'patient_id']:
                 item[key] = sample[key]
             items.append(item)
         return items

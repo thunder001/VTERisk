@@ -88,6 +88,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                                  'index_date': index_date,
                                  'dx_date': dx_date,
                                  'ks': ks,
+                                 'race':race,
                                  'sex': sex,
                                  'bmi': bmi})
             
@@ -146,23 +147,26 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
 
         if self.shard:
             patient['events'] = self.process_events(patient['events'], patient["obs_time_end"])
-
-        if self.split_group in ['dev', 'test', 'attribute', 'all']:
-            if not self.args.no_random_sample_eval_trajectories:
-                selected_idx = [random.choice(patient['avai_indices']) for _ in range(self.args.max_eval_indices)]
-            else:
-                selected_idx = patient['avai_indices'][-self.args.max_eval_indices:]
-        else:
-            selected_idx = [random.choice(patient['avai_indices'])]
-
+        
+        events = patient['events']
+        ev_dates = [events[i]['admit_date'] for i in range(len(events))]
+                
+        lookback = patient['index_date'] + datetime.timedelta(self.args.days)    
+        selected_idx =  [np.argmin( [abs(ev_dates[i] - lookback) for i in range(len(ev_dates ))])]    
+        
         samples = []
         for idx in selected_idx:
             events_to_date = patient['events'][:idx + 1]
 
             codes = [e['codes'] for e in events_to_date]
             _, time_seq = self.get_time_seq(events_to_date, events_to_date[-1]['admit_date'])
-            age, age_seq = self.get_time_seq(events_to_date, patient['dob'])
-            dx, dx_seq = self.get_time_seq(events_to_date, patient['dx_date'])
+            age, age_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['dob'])
+ 
+            if self.args.dxseq_event: 
+                dx, dx_seq = self.get_event_seq(patient['dx_date'],patient['dob'])            
+            else:
+                dx, dx_seq = self.get_event_seq( patient['index_date'] ,patient['dob'])        
+
             y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, idx)
             samples.append({'events': events_to_date,
                             'y': y,
@@ -180,6 +184,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                             'ks': patient['ks'],
                             'sex': patient['sex'],
                             'bmi': patient['bmi'],
+                            'race': patient['race'],
                             'admit_date': events_to_date[-1]['admit_date'].isoformat(),
                             'exam': str(events_to_date[-1]['admid'])})
 
@@ -193,7 +198,16 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
         positional_embeddings = np.cos(deltas * multipliers)
         return max(deltas), positional_embeddings
+     
+    def get_event_seq(self, event, reference_date):
+        deltas = np.array([abs((reference_date - event).days)])
+        multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
+                                               num=self.args.time_embed_dim))
 
+        deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
+        positional_embeddings = np.cos(deltas * multipliers)        
+        return max(deltas), positional_embeddings
+    
     def class_count(self):
         # Implement for class balance
         ys = [patient['y'] for patient in self.patients]
@@ -227,7 +241,6 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         '''
         event = patient['events'][idx]
         days_to_censor = (patient['outcome_date'] - event['admit_date']).days
-       
         if self.args.pred_day:
             num_time_steps, max_time = len(self.args.day_endpoints), max(self.args.day_endpoints)
             y = days_to_censor < max_time and patient['outcome']
@@ -246,11 +259,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             if y:
                 y_seq[time_at_event:] = 1
             y_mask = np.array([1] * (time_at_event + 1) + [0] * (num_time_steps - (time_at_event + 1)))
-        
-        
-        
-    
-    
+
         assert time_at_event >= 0 and len(y_seq) == len(y_mask)
         return y, y_seq.astype('float64'), y_mask.astype('float64'), time_at_event, days_to_censor
 
