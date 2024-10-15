@@ -7,6 +7,7 @@
      	"model_name": ["transformer"],
 		"attribute":[true],
 		"days":[730],
+		"pred_day": [false],
 		"month_endpoints":[3, 6, 12, 24],
 		"day_endpoints":[90, 180, 360, 720],
 		"tuning_metric":["3month_auroc_c"],
@@ -30,7 +31,7 @@
 		"add_sex_neuron": [true],
 	    "add_bmi_neuron": [true],
 		"add_race_neuron": [true],
-		"dxseq_event": [false],
+		"dxseq_event": [true],
         "no_random_sample_eval_trajectories": [false],
         "pad_size": [300],
         "epochs":[10],
@@ -50,8 +51,8 @@
         "eval_auroc": [true],
         "eval_auprc": [true],
         "eval_c_index": [true],
-        "model_dir":["snapshot_vte/F"],
-        "log_dir":["logs_transformer_vte/F"]
+        "model_dir":["snapshot_vte/y_CMP"],
+        "log_dir":["logs_transformer_vte/y_CMP"]
     },
     "available_gpus": [1]
   }
