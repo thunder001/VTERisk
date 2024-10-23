@@ -249,11 +249,11 @@ def get_dataset(args):
             args.code_to_index_map = map_code_to_index_to_usa(args)
         elif args.map_to_icd_system == "dk":
             raise NotImplementedError
-        elif 'code_to_index_map' in args:
-            print("Warning! No map_to_icd_system is used, using the previous map from result files directly.")
-            pass
         elif 'code_to_index_file' in args:
             print("Warning! No map_to_icd_system is used, using specified code_to_index json file..")
+            args.code_to_index_map = json.load(open(args.code_to_index_file, 'r'))
+        elif 'code_to_index_map' in args:
+            print("Warning! No map_to_icd_system is used, using the previous map from result files directly.") # omitted "pass"
             args.code_to_index_map = json.load(open(args.code_to_index_file, 'r'))
         else:
             print("Warning! No map_to_icd_system is used and no previous map is found from result files. Loading from separate files.")

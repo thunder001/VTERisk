@@ -70,7 +70,7 @@ def parse_args(args_str=None):
                         default='F:\\tmp_pancreatic\\temp_json\\global\\test',
                         help="Folder of source test datafiles")
     parser.add_argument('--data_file_idx', type=int, default=0, help="Specify which data file will be used")
-    parser.add_argument('--pred_day', action='store_true', default=True, help="Specify which data file will be used")
+    parser.add_argument('--pred_day', action='store_true', default=False, help="Specify which data file will be used")
     parser.add_argument('--day_endpoints', nargs='+', type=int, default=[7, 14], help="List of month endpoints at which to predict risk")
     parser.add_argument('--month_endpoints', nargs='+', type=int, default=[3, 6], help="List of month endpoints at which to predict risk")
     parser.add_argument('--code_to_index_file', type=str, default='', help="File with code to index information")
@@ -114,7 +114,15 @@ def parse_args(args_str=None):
     parser.add_argument('--use_age_embed', action='store_true', default=False, help='Wether or not to condition embeddings by their relative time.')
     parser.add_argument('--use_dxtime_embed', action='store_true', default=False, help='Wether or not to condition embeddings by time from diagnosis date')
     parser.add_argument('--dxseq_event', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from diagnosis date')
-    parser.add_argument('--days', type=int, default=30, help="lookfwd window days")
+    parser.add_argument('--indseq_event', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from diagnosis date')
+    parser.add_argument('--use_index_embed', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
+    parser.add_argument('--sensitivity', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
+
+    parser.add_argument('--multi_traj', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
+
+ 
+    parser.add_argument('--days', type=int, default=30, help="lookfwd window days end")
+    parser.add_argument('--days0', type=int, default=0, help="lookfwd window start")
 
 
     parser.add_argument('--time_embed_dim', type=int, default=128, help="Representation size at for time embeddings.")

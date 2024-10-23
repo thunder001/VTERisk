@@ -10,6 +10,8 @@ from torch.utils import data
 from disrisknet.utils.date import parse_date
 from disrisknet.utils.parsing import md5
 import pdb
+from bisect import bisect_left
+from itertools import compress
 
 END_OF_TIME_DATE = datetime.datetime(2020, 12, 31, 0, 0)
 OUTCOME_CODE = ['VTE']
@@ -103,9 +105,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             if not self.shard:
                 patient_dict.update({'events': events})
 
-
-            if avai_indices:  # if any
-                # self.patients.append(patient_dict)
+            if avai_indices:  
                 self.patients = np.append(self.patients, patient_dict)
 
         print("Number of patients with missing end of data is: {}".format(count_missing_date))
@@ -142,6 +142,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         event = {'admit_date': new_date, 'codes': code, 'hospital': 'n/a', 'admid': '{}_{}'.format(admid_base, year)}
 
         return event
+    
 
     def get_trajectory(self, patient):
 
@@ -150,10 +151,40 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         
         events = patient['events']
         ev_dates = [events[i]['admit_date'] for i in range(len(events))]
-                
-        lookback = patient['index_date'] + datetime.timedelta(self.args.days)    
-        selected_idx =  [np.argmin( [abs(ev_dates[i] - lookback) for i in range(len(ev_dates ))])]    
+                 
+        def find_closest_date_before(reference_date, dates):
+            index = bisect_left(dates, reference_date)
+            if index == 0:
+                return None  # No date before the reference date
+            return index - 1
         
+    
+        if self.args.sensitivity:
+            lookback = patient['index_date'] + datetime.timedelta( int(   self.args.days )  )
+            selected_idx = [find_closest_date_before(lookback, ev_dates)]
+        elif self.args.multi_traj:
+            
+            t1 = patient['index_date'] + datetime.timedelta( 30 ) 
+            t2 = patient['index_date'] + datetime.timedelta( 90 )  
+            t3 = patient['index_date'] + datetime.timedelta( 180 )  
+            t4 = patient['index_date'] + datetime.timedelta( 270 )  
+    
+            # need to subset traj by outcome date
+            # if 
+            
+            sel_i =  [find_closest_date_before(t1, ev_dates), 
+                      find_closest_date_before(t2, ev_dates),
+                      find_closest_date_before(t3, ev_dates),
+                      find_closest_date_before(t4, ev_dates),]    
+            valid =  [i< patient['outcome_date'] for i in [t1,t2,t3,t4]]
+            selected_idx = list( compress(sel_i, valid))
+            
+        else:
+            forward_noise = random.choice(np.arange( self.args.days0  ,   self.args.days   ))
+            lookback = patient['index_date'] + datetime.timedelta( int(forward_noise)  )
+            selected_idx = [find_closest_date_before(lookback, ev_dates)]
+
+                
         samples = []
         for idx in selected_idx:
             events_to_date = patient['events'][:idx + 1]
@@ -165,7 +196,11 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             if self.args.dxseq_event: 
                 dx, dx_seq = self.get_event_seq(patient['dx_date'],patient['dob'])            
             else:
-                dx, dx_seq = self.get_event_seq( patient['index_date'] ,patient['dob'])        
+                dx, dx_seq = self.get_event_seq( events_to_date[-1]['admit_date']  ,patient['dx_date'])                    
+            if self.args.indseq_event: 
+                ind, ind_seq= self.get_event_seq(patient['index_date'],patient['dx_date'])            
+            else:
+                 ind, ind_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['index_date'])        
 
             y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, idx)
             samples.append({'events': events_to_date,
@@ -179,6 +214,8 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                             'time_seq': time_seq,
                             'dx_seq': dx_seq,
                             'dx': dx,
+                            'ind_seq': ind_seq,
+                            'ind': ind,
                             'age_seq': age_seq,
                             'age': age,
                             'ks': patient['ks'],
@@ -303,16 +340,17 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             time_seq = sample['time_seq'].tolist()
             age_seq = sample['age_seq'].tolist()
             dx_seq = sample['dx_seq'].tolist()
+            ind_seq = sample['ind_seq'].tolist()
 
             item = {
                 'x': self.pad_arr(x, self.args.pad_size, 0),
-                # 'char_x': pad_arr(char_x, self.args.pad_size, np.zeros_like(char_x[0])) if self.args.use_char_embedding else [-1],
                 'time_seq': self.pad_arr(time_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
                 'age_seq': self.pad_arr(age_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)), 
                 'dx_seq': self.pad_arr(dx_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
+                'ind_seq': self.pad_arr(ind_seq, self.args.pad_size, np.zeros(self.args.time_embed_dim)),
                 'code_str': code_str
             }
-            for key in ['y', 'y_seq', 'y_mask', 'time_at_event', 'admit_date', 'exam', 'age', 'dx', 'ks', 'sex', 'bmi', 'outcome',  'days_to_censor', 'patient_id']:
+            for key in ['y', 'y_seq', 'y_mask', 'time_at_event', 'admit_date', 'exam', 'age', 'dx', 'ind', 'ks', 'sex', 'bmi','race', 'outcome',  'days_to_censor', 'patient_id']:
                 item[key] = sample[key]
             items.append(item)
         return items

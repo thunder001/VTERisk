@@ -219,7 +219,7 @@ def run_epoch(data_loader, train_model, truncate_epoch, models, optimizers, args
 
 
 def prepare_batch(batch, args):
-    keys_of_interest = ['x', 'y','y_seq','y_mask', 'time_seq', 'age', 'ks', 'sex', 'bmi', 'age_seq', 'dx', 'dx_seq', 'time_at_event', 'outcome', 'days_to_censor']
+    keys_of_interest = ['x', 'y','y_seq','y_mask', 'time_seq', 'age', 'ks', 'sex', 'bmi', 'age_seq', 'dx', 'dx_seq','ind', 'ind_seq', 'race', 'time_at_event', 'outcome', 'days_to_censor']
     if args.use_char_embedding:
         keys_of_interest += ['char_x']
 

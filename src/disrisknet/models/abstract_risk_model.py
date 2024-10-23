@@ -46,7 +46,9 @@ class AbstractRiskModel(nn.Module):
                 hidden_dim = hidden_dim+1 
             if self.args.add_bmi_neuron: 
                 hidden_dim = hidden_dim+1 
-            self.prob_of_failure_layer = Cumulative_Probability_Layer(hidden_dim, len(args.day_endpoints), args)
+            if self.args.add_race_neuron: 
+                hidden_dim = hidden_dim+1 
+            self.prob_of_failure_layer = Cumulative_Probability_Layer(hidden_dim, len(args.month_endpoints), args)
 
         if args.use_time_embed:
             self.t_embed_add_fc = nn.Linear(args.time_embed_dim, args.hidden_dim)
@@ -59,6 +61,10 @@ class AbstractRiskModel(nn.Module):
         if args.use_dxtime_embed:
             self.d_embed_add_fc = nn.Linear(args.time_embed_dim, args.hidden_dim)
             self.d_embed_scale_fc = nn.Linear(args.time_embed_dim, args.hidden_dim)    
+        
+        if args.use_index_embed:
+            self.i_embed_add_fc = nn.Linear(args.time_embed_dim, args.hidden_dim)
+            self.i_embed_scale_fc = nn.Linear(args.time_embed_dim, args.hidden_dim)    
             
 
         if args.pred_mask:
@@ -85,6 +91,8 @@ class AbstractRiskModel(nn.Module):
             return self.a_embed_scale_fc(embed) * x + self.a_embed_add_fc(embed)
         if embed_type == 'dxtime':
             return self.d_embed_scale_fc(embed) * x + self.d_embed_add_fc(embed)
+        if embed_type == 'indextime':
+            return self.i_embed_scale_fc(embed) * x + self.i_embed_add_fc(embed)
         else:
             raise NotImplementedError("Embed type {} not supported".format(embed_type))
 
@@ -127,6 +135,10 @@ class AbstractRiskModel(nn.Module):
         if self.args.use_dxtime_embed:
             dxtime = batch['dx_seq'].float()
             embed_x = self.condition_on_pos_embed(embed_x, dxtime, 'dxtime')
+         
+        if self.args.use_index_embed:
+            indextime = batch['ind_seq'].float()
+            embed_x = self.condition_on_pos_embed(embed_x, indextime, 'indextime')
 
         if self.args.pred_mask:
             raise Exception ("Prediction mask is not enabled.")
@@ -161,7 +173,13 @@ class AbstractRiskModel(nn.Module):
                 bmi = F.normalize(batch['bmi'], p=1.0, dim=0)
             bmi = batch['bmi'].int()
             bmi = bmi.reshape(len(bmi), 1)
-            hidden = torch.cat((hidden, bmi), axis=-1)                   
+            hidden = torch.cat((hidden, bmi), axis=-1)              
+                
+        if self.args.add_race_neuron:
+            race = batch['race'].int()
+            race = race.reshape(len(race), 1)
+            hidden = torch.cat((hidden, race), axis=-1)                  
+            
             
         logit = self.prob_of_failure_layer(hidden)
 
