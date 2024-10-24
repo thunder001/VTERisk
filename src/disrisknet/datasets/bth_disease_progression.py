@@ -150,8 +150,13 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             patient['events'] = self.process_events(patient['events'], patient["obs_time_end"])
         
         events = patient['events']
-        ev_dates = [events[i]['admit_date'] for i in range(len(events))]
-                 
+        ev_dates = [events[i]['admit_date'] for i in range(len(events))]           
+        # not sure if the filter max years was actually working, as the valid traj was only filtering from ending index
+                
+        yr_before = self.args.max_year_before_index               
+        valid_ind =  [i + datetime.timedelta(yr_before*365)> patient['index_date'] for i in ev_dates]
+        events = list( compress(events, valid_ind))
+        
         def find_closest_date_before(reference_date, dates):
             index = bisect_left(dates, reference_date)
             if index == 0:
@@ -164,7 +169,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             selected_idx = [find_closest_date_before(lookback, ev_dates)]
                     
         elif self.args.multi_traj:
-            
+            # segments of 2 years, must work with month_endpoint = [2]
             t0 = patient['index_date']  
             t1 = patient['index_date'] + datetime.timedelta( 60 ) 
             t2 = patient['index_date'] + datetime.timedelta( 120 )  
@@ -178,8 +183,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             selected_idx = list( compress(sel_i, valid))
                         
         elif self.args.multi_traj3:
-            # initial implmentation where positives are not converte dto negtaives;
-            #  positives are counted  multiple times
+          
             t1 = patient['index_date'] 
             t2 = patient['index_date'] + datetime.timedelta( 90 )  
             t3 = patient['index_date'] + datetime.timedelta( 180 )  

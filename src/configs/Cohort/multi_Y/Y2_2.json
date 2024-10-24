@@ -1,9 +1,9 @@
 {
     "search_space": {
         "disease_code_system": ["phe_CMP"],
-         "train_data_dir": ["\\vacrrdevmavdi01.vha.med.va.gov\MAVDEV1\Fillmore_Cancer\cat\Users\data\derived\vte_ml\vte_ml\data_for_chunlei\A2_CMP\train2"],
-        "dev_data_dir": ["\\vacrrdevmavdi01.vha.med.va.gov\MAVDEV1\Fillmore_Cancer\cat\Users\data\derived\vte_ml\vte_ml\data_for_chunlei\A2_CMP\dev2"],
-        "test_data_dir": ["\\vacrrdevmavdi01.vha.med.va.gov\MAVDEV1\Fillmore_Cancer\cat\Users\data\derived\vte_ml\vte_ml\data_for_chunlei\A2_CMP\test2"], 
+        "train_data_dir": ["Y:/Fillmore_Cancer/cat/Users/data/derived/vte_ml/vte_ml/data_for_chunlei/A2_CMP/Resplit/Y2/train"],
+        "dev_data_dir": ["Y:/Fillmore_Cancer/cat/Users/data/derived/vte_ml/vte_ml/data_for_chunlei/A2_CMP/Resplit/Y2/dev"],
+        "test_data_dir": ["Y:/Fillmore_Cancer/cat/Users/data/derived/vte_ml/vte_ml/data_for_chunlei/A2_CMP/Resplit/Y2/test"],
      	"model_name": ["transformer"],
 		"multi_traj3":[true],
 		"pred_day":[false],
@@ -18,7 +18,7 @@
         "exclusion_interval": [0],
         "baseline_diseases": [false],
         "dropout":[0],
-        "init_lr":[0.0025],
+        "init_lr":[0.0015],
         "lr_decay":[0.3],
         "weight_decay":[0.001],
         "pool_name": ["Softmax_AttentionPool"],
@@ -30,11 +30,11 @@
 		"add_sex_neuron": [true],
 	    "add_bmi_neuron": [true],
 		"add_race_neuron": [true],
-		"dxseq_event": [true],
+		"dxseq_event": [false],
 		"indseq_event": [false],
         "no_random_sample_eval_trajectories": [false],
         "pad_size": [300],
-        "epochs":[18],
+        "epochs":[10],
         "train":[true],
         "dev":[true],
         "test":[true],
@@ -46,12 +46,13 @@
         "eval_batch_size": [64],
         "max_batches_per_train_epoch": [2000],
         "max_batches_per_dev_epoch": [500],
-        "max_events_length": [1000],
+        "max_events_length": [2500],
         "max_eval_indices": [1],
         "eval_auroc": [true],
         "eval_auprc": [true],
-        "model_dir":["snapshot_vte/H"],
-        "log_dir":["logs_transformer_vte/H"]
+        "eval_c_index": [true],
+        "model_dir":["snapshot_vte/y_CMP"],
+        "log_dir":["logs_transformer_vte/y_CMP"]
     },
     "available_gpus": [1]
   }
