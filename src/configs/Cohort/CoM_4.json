@@ -33,7 +33,7 @@
 		"dxseq_event": [true],
 		"indseq_event": [false],
         "no_random_sample_eval_trajectories": [false],
-        "pad_size": [250],
+        "pad_size": [300],
         "epochs":[18],
         "train":[true],
         "dev":[true],
@@ -50,9 +50,8 @@
         "max_eval_indices": [1],
         "eval_auroc": [true],
         "eval_auprc": [true],
-        "eval_c_index": [true],
-        "model_dir":["snapshot_vte/G"],
-        "log_dir":["logs_transformer_vte/G"]
+        "model_dir":["snapshot_vte/H"],
+        "log_dir":["logs_transformer_vte/H"]
     },
     "available_gpus": [1]
   }

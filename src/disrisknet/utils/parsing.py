@@ -119,6 +119,7 @@ def parse_args(args_str=None):
     parser.add_argument('--sensitivity', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
 
     parser.add_argument('--multi_traj', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
+    parser.add_argument('--multi_traj3', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
 
  
     parser.add_argument('--days', type=int, default=30, help="lookfwd window days end")

@@ -162,16 +162,29 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         if self.args.sensitivity:
             lookback = patient['index_date'] + datetime.timedelta( int(   self.args.days )  )
             selected_idx = [find_closest_date_before(lookback, ev_dates)]
+                    
         elif self.args.multi_traj:
             
-            t1 = patient['index_date'] + datetime.timedelta( 30 ) 
+            t0 = patient['index_date']  
+            t1 = patient['index_date'] + datetime.timedelta( 60 ) 
+            t2 = patient['index_date'] + datetime.timedelta( 120 )  
+            t3 = patient['index_date'] + datetime.timedelta( 180 )  
+            
+            sel_i =  [find_closest_date_before(t0, ev_dates),
+                      find_closest_date_before(t1, ev_dates), 
+                      find_closest_date_before(t2, ev_dates),
+                      find_closest_date_before(t3, ev_dates)]    
+            valid =  [i< patient['outcome_date'] for i in [t0, t1,t2,t3]]
+            selected_idx = list( compress(sel_i, valid))
+                        
+        elif self.args.multi_traj3:
+            # initial implmentation where positives are not converte dto negtaives;
+            #  positives are counted  multiple times
+            t1 = patient['index_date'] 
             t2 = patient['index_date'] + datetime.timedelta( 90 )  
             t3 = patient['index_date'] + datetime.timedelta( 180 )  
             t4 = patient['index_date'] + datetime.timedelta( 270 )  
-    
-            # need to subset traj by outcome date
-            # if 
-            
+                
             sel_i =  [find_closest_date_before(t1, ev_dates), 
                       find_closest_date_before(t2, ev_dates),
                       find_closest_date_before(t3, ev_dates),
@@ -200,9 +213,10 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             if self.args.indseq_event: 
                 ind, ind_seq= self.get_event_seq(patient['index_date'],patient['dx_date'])            
             else:
-                 ind, ind_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['index_date'])        
+                ind, ind_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['index_date'])        
 
             y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, idx)
+            
             samples.append({'events': events_to_date,
                             'y': y,
                             'y_seq': y_seq,
@@ -278,6 +292,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         '''
         event = patient['events'][idx]
         days_to_censor = (patient['outcome_date'] - event['admit_date']).days
+        
         if self.args.pred_day:
             num_time_steps, max_time = len(self.args.day_endpoints), max(self.args.day_endpoints)
             y = days_to_censor < max_time and patient['outcome']

@@ -33,7 +33,7 @@
 		"dxseq_event": [true],
 		"indseq_event": [false],
         "no_random_sample_eval_trajectories": [false],
-        "pad_size": [250],
+        "pad_size": [300],
         "epochs":[18],
         "train":[true],
         "dev":[true],
