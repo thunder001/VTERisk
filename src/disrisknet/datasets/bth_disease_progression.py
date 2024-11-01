@@ -93,7 +93,6 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                                  'race':race,
                                  'sex': sex,
                                  'bmi': bmi})
-            
             feat_subgroup = {'birth_date': patient_metadata[patient_id]['birthdate']}
 
             if args.cross_eval or self.split_group == 'all':
@@ -140,7 +139,6 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         code = NO_OP_TOKEN
         new_date = start_date + datetime.timedelta(365 * year)
         event = {'admit_date': new_date, 'codes': code, 'hospital': 'n/a', 'admid': '{}_{}'.format(admid_base, year)}
-
         return event
     
 
@@ -151,81 +149,82 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         
         events = patient['events']
         ev_dates = [events[i]['admit_date'] for i in range(len(events))]           
-        days_before_index =  datetime.timedelta( self.args.max_year_before_index   *365)
-        valid_ind =  [i + days_before_index > patient['index_date'] for i in ev_dates]
+        
+        if self.args.start_at_dx:
+            days_before_index =  datetime.timedelta( self.args.max_days_before_index )
+            valid_ind =  [i +days_before_index > patient['dx_date'] for i in ev_dates]
+        else:
+            days_before_index =  datetime.timedelta( self.args.max_days_before_index )
+            valid_ind =  [i + days_before_index > patient['index_date'] for i in ev_dates]
+
+
         events = list( compress(events, valid_ind))
+        ev_dates1 = [events[i]['admit_date'] for i in range(len(events))]           # event dates after filtered
         
         def find_closest_date_before(reference_date, dates):
             index = bisect_left(dates, reference_date)
             if index == 0:
                 return None  # No date before the reference date
             return index - 1
-        
     
-        if self.args.sensitivity:
-            lookback = patient['index_date'] + datetime.timedelta( int(   self.args.days )  )
-            selected_idx = [find_closest_date_before(lookback, ev_dates)]
-                    
-        elif self.args.multi_traj:
-            # segments of 2 years, must work with month_endpoint = [2]
-            t0 = patient['index_date']  
-            t1 = patient['index_date'] + datetime.timedelta( 60 ) 
-            t2 = patient['index_date'] + datetime.timedelta( 120 )  
-            t3 = patient['index_date'] + datetime.timedelta( 180 )  
-            
-            sel_i =  [find_closest_date_before(t0, ev_dates),
-                      find_closest_date_before(t1, ev_dates), 
-                      find_closest_date_before(t2, ev_dates),
-                      find_closest_date_before(t3, ev_dates)]    
-            valid =  [i< patient['outcome_date'] for i in [t0, t1,t2,t3]]
-            selected_idx = list( compress(sel_i, valid))
-                        
-        elif self.args.multi_traj3:
-          
-            t1 = patient['index_date'] 
-            t2 = patient['index_date'] + datetime.timedelta( 90 )  
-            t3 = patient['index_date'] + datetime.timedelta( 180 )  
-            t4 = patient['index_date'] + datetime.timedelta( 270 )  
-                
-            sel_i =  [find_closest_date_before(t1, ev_dates), 
-                      find_closest_date_before(t2, ev_dates),
-                      find_closest_date_before(t3, ev_dates),
-                      find_closest_date_before(t4, ev_dates),]    
-            valid =  [i< patient['outcome_date'] for i in [t1,t2,t3,t4]]
-            selected_idx = list( compress(sel_i, valid))
-            
-        else:
-            forward_noise = random.choice(np.arange( self.args.days0  ,   self.args.days   ))
-            lookback = patient['index_date'] + datetime.timedelta( int(forward_noise)  )
-            selected_idx = [find_closest_date_before(lookback, ev_dates)]
+        t1 = patient['index_date']  + datetime.timedelta(1)  
+        t2 = patient['index_date'] + datetime.timedelta( 91 )  
+        t3 = patient['index_date'] + datetime.timedelta( 181 )  
+        t4 = patient['index_date'] + datetime.timedelta( 271)  
 
-                
+        sel_i =  [find_closest_date_before(t1, ev_dates1), 
+                  find_closest_date_before(t2, ev_dates1),
+                  find_closest_date_before(t3, ev_dates1),
+                  find_closest_date_before(t4, ev_dates1),]    
+        valid =  [i< patient['outcome_date'] for i in [t1,t2,t3,t4]]
+        selected_idx = list( compress(sel_i, valid))
+            
         samples = []
         for idx in selected_idx:
             
             if self.args.start_noise:
-                days_past_start = random.choice(np.arange(0 ,   180  ))
+                days_past_start = random.choice(np.arange(0 ,   self.args.start_noise_len  ))
                 events_to_date = events[int(days_past_start):idx + 1]
+           
+            elif self.args.start_noise_days:
+                if self.split_group in ['train', 'dev']:
+                    days_past_start = random.choice(np.arange(0 ,   self.args.start_noise_len  ))   
+                    date_past_start = ev_dates1[0] + datetime.timedelta( int(days_past_start)  )
+                    random_date =  find_closest_date_before(date_past_start, ev_dates1)
+                    events_to_date = events[random_date:idx + 1]
+                else:
+                    events_to_date = events[:idx + 1]
+                                        
             else:
                 events_to_date = events[:idx + 1]
+                
+            if self.args.filter_max_len:
+                if idx > self.args.max_events_length:
+                    idx_start = idx - self.args.max_events_length
+                    events_to_date = events[ int(idx_start)   :idx + 1]
 
             if len(events_to_date)> self.args.min_events_length:
  
                 codes = [e['codes'] for e in events_to_date]
                 _, time_seq = self.get_time_seq(events_to_date, events_to_date[-1]['admit_date'])
-                age, age_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['dob'])
-
+                
+                if self.args.ageseq_event: 
+                    age, age_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['dob'])
+                else:
+                    age, age_seq = self.get_time_seq( events_to_date , patient['dob'])
+                
                 if self.args.dxseq_event: 
                     dx, dx_seq = self.get_event_seq(patient['dx_date'],patient['dob'])            
                 else:
-                    dx, dx_seq = self.get_event_seq( events_to_date[-1]['admit_date']  ,patient['dx_date'])                    
+                    dx, dx_seq = self.get_time_seq( events_to_date  ,patient['dx_date'])  
+                    
                 if self.args.indseq_event: 
-                    ind, ind_seq= self.get_event_seq(patient['index_date'],patient['dx_date'])            
+                    ind, ind_seq= self.get_event_seq(patient['index_date'],patient['dob'])            
                 else:
-                    ind, ind_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['index_date'])        
+                    ind, ind_seq = self.get_time_seq( events_to_date , patient['index_date'])        
 
-                y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, idx)
-
+                y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, events, idx)
+                
                 samples.append({'events': events_to_date,
                                 'y': y,
                                 'y_seq': y_seq,
@@ -246,7 +245,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                                 'bmi': patient['bmi'],
                                 'race': patient['race'],
                                 'admit_date': events_to_date[-1]['admit_date'].isoformat(),
-                                'exam': str(events_to_date[-1]['admid'])})
+                                'exam': len(events_to_date)})
 
         return self.add_noise(samples)
 
@@ -280,7 +279,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
             print("Label weights are {}".format(label_weights))
         self.weights = [label_weights[d] for d in ys]
 
-    def get_label(self, patient, idx):
+    def get_label(self, patient,events, idx):
         '''
             outcome_date: outcome occurance or END_OF_TIME_DATE
             time_at_event: years to outcome_data/END_OF_TIME_DATE
@@ -299,7 +298,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                     y_mask: [1, 1, 0, 0, 0]
                     time_at_event: 1,
         '''
-        event = patient['events'][idx]
+        event = events[idx]  #rpelaced events with patient events
         days_to_censor = (patient['outcome_date'] - event['admit_date']).days
         
         if self.args.pred_day:

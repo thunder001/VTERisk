@@ -112,21 +112,26 @@ def parse_args(args_str=None):
     parser.add_argument('--add_race_neuron', action='store_true', default=False, help='Wether or not to add bmi neuron in abstract risk model')
         
     parser.add_argument('--use_age_embed', action='store_true', default=False, help='Wether or not to condition embeddings by their relative time.')
+    parser.add_argument('--ageseq_event', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from diagnosis date')
+    
     parser.add_argument('--use_dxtime_embed', action='store_true', default=False, help='Wether or not to condition embeddings by time from diagnosis date')
     parser.add_argument('--dxseq_event', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from diagnosis date')
     parser.add_argument('--indseq_event', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from diagnosis date')
     parser.add_argument('--use_index_embed', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
-    parser.add_argument('--sensitivity', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
 
-    parser.add_argument('--multi_traj', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
-    parser.add_argument('--multi_traj3', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
 
-    parser.add_argument('--start_noise', action='store_true', default=False, help='Wether or not to condition time seq before and after by time from index date')
+    parser.add_argument('--start_noise', action='store_true', default=False, help='noisepast first event')
+    parser.add_argument('--start_at_dx', action='store_true', default=False, help='noisepast first event, days')
+    
+    parser.add_argument('--start_noise_days', action='store_true', default=False, help='noisepast first event, days')
+    
+    parser.add_argument('--start_noise_len', type=int, default=30, help="upper range of event # to cut from start")
+    parser.add_argument('--filter_max_len', action='store_true', default=False, help='filter max length from bth')
+    parser.add_argument('--max_days_before_index', type=int, default=365, help="Min num events to include a patient")
 
- 
-    parser.add_argument('--days', type=int, default=30, help="lookfwd window days end")
-    parser.add_argument('--days0', type=int, default=0, help="lookfwd window start")
-
+    
+    
+    
 
     parser.add_argument('--time_embed_dim', type=int, default=128, help="Representation size at for time embeddings.")
     parser.add_argument('--pred_mask', action='store_true', default=False, help='Pred masked out tokens.')
