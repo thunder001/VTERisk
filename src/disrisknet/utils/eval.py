@@ -2,6 +2,7 @@ import sklearn.metrics
 from disrisknet.utils.c_index import concordance_index
 import warnings
 import numpy as np
+from sklearn.calibration import calibration_curve
 from sklearn.metrics._ranking import _binary_clf_curve
 
 
@@ -110,6 +111,10 @@ def compute_c_index(probs, censor_times, golds):
         warnings.warn("Failed to calculate C-index because {}".format(e))
         c_index = 'NA'
     return c_index
+
+def compute_calibration_curve(golds_for_eval,Probs_for_eval):
+    prob_true, prob_pred = calibration_curve(golds_for_eval, Probs_for_eval, n_bins=10)
+    return prob_true, prob_pred
 
 
 def compute_auroc(golds_for_eval, probs_for_eval):

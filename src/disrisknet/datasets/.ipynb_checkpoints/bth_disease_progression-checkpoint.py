@@ -153,10 +153,25 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         if self.args.start_at_dx:
             days_before_index =  datetime.timedelta( self.args.max_days_before_index )
             valid_ind =  [i +days_before_index > patient['dx_date'] for i in ev_dates]
+                    
+        elif self.args.start_at_dx_100:
+            days_before_index =  datetime.timedelta( self.args.max_days_before_index )
+            dx100 = patient['dx_date'] - datetime.timedelta( 100 )
+            if dx100 >  patient['index_date']:
+                valid_ind =    [i +days_before_index > (patient['index_date'] - datetime.timedelta(100)) for i in ev_dates]
+            else:
+                valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]
+                
+        elif self.args.start_at_dx_60:
+            days_before_index =  datetime.timedelta( self.args.max_days_before_index )
+            dx100 = patient['dx_date'] - datetime.timedelta( 60 )
+            if dx100 >  patient['index_date']:
+                valid_ind =    [i +days_before_index > (patient['index_date'] - datetime.timedelta(100)) for i in ev_dates]
+            else:
+                valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]
         else:
             days_before_index =  datetime.timedelta( self.args.max_days_before_index )
             valid_ind =  [i + days_before_index > patient['index_date'] for i in ev_dates]
-
 
         events = list( compress(events, valid_ind))
         ev_dates1 = [events[i]['admit_date'] for i in range(len(events))]           # event dates after filtered
@@ -180,72 +195,74 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         selected_idx = list( compress(sel_i, valid))
             
         samples = []
+        
         for idx in selected_idx:
             
-            if self.args.start_noise:
-                days_past_start = random.choice(np.arange(0 ,   self.args.start_noise_len  ))
-                events_to_date = events[int(days_past_start):idx + 1]
-           
-            elif self.args.start_noise_days:
-                if self.split_group in ['train', 'dev']:
-                    days_past_start = random.choice(np.arange(0 ,   self.args.start_noise_len  ))   
-                    date_past_start = ev_dates1[0] + datetime.timedelta( int(days_past_start)  )
-                    random_date =  find_closest_date_before(date_past_start, ev_dates1)
-                    events_to_date = events[random_date:idx + 1]
+            if idx is not None:
+                if self.args.start_noise:
+                    days_past_start = random.choice(np.arange(0 ,   self.args.start_noise_len  ))
+                    events_to_date = events[int(days_past_start):idx + 1]
+
+                elif self.args.start_noise_days:
+                    if self.split_group in ['train', 'dev']:
+                        days_past_start = random.choice(np.arange(0 ,   self.args.start_noise_len  ))   
+                        if len(ev_dates1)>0:
+                            date_past_start = ev_dates1[0] + datetime.timedelta( int(days_past_start)  )
+                            random_date =  find_closest_date_before(date_past_start, ev_dates1)
+                            events_to_date = events[random_date:idx + 1]
+                    else:
+                        events_to_date = events[:idx + 1]
                 else:
                     events_to_date = events[:idx + 1]
-                                        
-            else:
-                events_to_date = events[:idx + 1]
-                
-            if self.args.filter_max_len:
-                if idx > self.args.max_events_length:
-                    idx_start = idx - self.args.max_events_length
-                    events_to_date = events[ int(idx_start)   :idx + 1]
 
-            if len(events_to_date)> self.args.min_events_length:
- 
-                codes = [e['codes'] for e in events_to_date]
-                _, time_seq = self.get_time_seq(events_to_date, events_to_date[-1]['admit_date'])
-                
-                if self.args.ageseq_event: 
-                    age, age_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['dob'])
-                else:
-                    age, age_seq = self.get_time_seq( events_to_date , patient['dob'])
-                
-                if self.args.dxseq_event: 
-                    dx, dx_seq = self.get_event_seq(patient['dx_date'],patient['dob'])            
-                else:
-                    dx, dx_seq = self.get_time_seq( events_to_date  ,patient['dx_date'])  
-                    
-                if self.args.indseq_event: 
-                    ind, ind_seq= self.get_event_seq(patient['index_date'],patient['dob'])            
-                else:
-                    ind, ind_seq = self.get_time_seq( events_to_date , patient['index_date'])        
+                if self.args.filter_max_len:
+                    if idx > self.args.max_events_length:
+                        idx_start = idx - self.args.max_events_length
+                        events_to_date = events[ int(idx_start)   :idx + 1]
 
-                y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, events, idx)
-                
-                samples.append({'events': events_to_date,
-                                'y': y,
-                                'y_seq': y_seq,
-                                'y_mask': y_mask,
-                                'time_at_event': time_at_event,
-                                'outcome': patient['outcome'],
-                                'patient_id': patient['patient_id'],
-                                'days_to_censor': days_to_censor,
-                                'time_seq': time_seq,
-                                'dx_seq': dx_seq,
-                                'dx': dx,
-                                'ind_seq': ind_seq,
-                                'ind': ind,
-                                'age_seq': age_seq,
-                                'age': age,
-                                'ks': patient['ks'],
-                                'sex': patient['sex'],
-                                'bmi': patient['bmi'],
-                                'race': patient['race'],
-                                'admit_date': events_to_date[-1]['admit_date'].isoformat(),
-                                'exam': len(events_to_date)})
+                if len(events_to_date)> self.args.min_events_length:
+
+                    codes = [e['codes'] for e in events_to_date]
+                    _, time_seq = self.get_time_seq(events_to_date, events_to_date[-1]['admit_date'])
+
+                    if self.args.ageseq_event: 
+                        age, age_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['dob'])
+                    else:
+                        age, age_seq = self.get_time_seq( events_to_date , patient['dob'])
+
+                    if self.args.dxseq_event: 
+                        dx, dx_seq = self.get_event_seq(patient['dx_date'],patient['dob'])            
+                    else:
+                        dx, dx_seq = self.get_time_seq( events_to_date  ,patient['dx_date'])  
+
+                    if self.args.indseq_event: 
+                        ind, ind_seq= self.get_event_seq(patient['index_date'],patient['dob'])            
+                    else:
+                        ind, ind_seq = self.get_time_seq( events_to_date , patient['index_date'])        
+
+                    y, y_seq, y_mask, time_at_event, days_to_censor = self.get_label(patient, events, idx)
+
+                    samples.append({'events': events_to_date,
+                                    'y': y,
+                                    'y_seq': y_seq,
+                                    'y_mask': y_mask,
+                                    'time_at_event': time_at_event,
+                                    'outcome': patient['outcome'],
+                                    'patient_id': patient['patient_id'],
+                                    'days_to_censor': days_to_censor,
+                                    'time_seq': time_seq,
+                                    'dx_seq': dx_seq,
+                                    'dx': dx,
+                                    'ind_seq': ind_seq,
+                                    'ind': ind,
+                                    'age_seq': age_seq,
+                                    'age': age,
+                                    'ks': patient['ks'],
+                                    'sex': patient['sex'],
+                                    'bmi': patient['bmi'],
+                                    'race': patient['race'],
+                                    'admit_date': events_to_date[-1]['admit_date'].isoformat(),
+                                    'exam': len(events_to_date)})
 
         return self.add_noise(samples)
 

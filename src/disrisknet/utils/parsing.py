@@ -121,8 +121,11 @@ def parse_args(args_str=None):
 
 
     parser.add_argument('--start_noise', action='store_true', default=False, help='noisepast first event')
-    parser.add_argument('--start_at_dx', action='store_true', default=False, help='noisepast first event, days')
+    parser.add_argument('--start_at_dx', action='store_true', default=False, help=' first event starts at dx date, days')
+    parser.add_argument('--start_at_dx_100', action='store_true', default=False, help='first event starts at dx date or 100 days before index, days')
     
+    parser.add_argument('--start_at_dx_60', action='store_true', default=False, help='first event starts at dx date or 100 days before index, days')
+
     parser.add_argument('--start_noise_days', action='store_true', default=False, help='noisepast first event, days')
     
     parser.add_argument('--start_noise_len', type=int, default=30, help="upper range of event # to cut from start")
