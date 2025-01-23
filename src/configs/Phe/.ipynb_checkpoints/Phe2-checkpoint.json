@@ -8,6 +8,7 @@
 		"pred_day":[false],
 		"month_endpoints":[[3]],
 		"tuning_metric":["3day_auroc_c"],
+        "attribute":["true"],
 		"start_noise":[false],
 		"start_at_dx_60":[true],
 		"max_days_before_index":[720],
@@ -34,8 +35,8 @@
 		"indseq_event": [false],
         "pad_size": [300],
         "epochs":[18],
-        "train":[true],
-        "dev":[true],
+        "train":[false],
+        "dev":[false],
         "test":[true],
         "cuda":[true],
         "device":["cuda:0"],
@@ -50,7 +51,10 @@
         "eval_auroc": [true],
         "eval_auprc": [true],
         "model_dir":["snapshot_vte/K"],
-        "log_dir":["logs_transformer_vte/K/12_4"]
+        "log_dir":["logs_transformer_vte/K/12_4"],
+        "snapshot":["snapshot_vte/K/model_6a827773e837f2b6ddb9b70a2821c81f_model.pt"],
+        "code_to_index_file" ["snapshot_vte/K/6a827773e837f2b6ddb9b70a2821c81f.code_map"]
+    },
     },
     "available_gpus": [1]
   }

@@ -47,6 +47,8 @@ def parse_args(args_str=None):
     parser = argparse.ArgumentParser(description='DiskRisk Classifier')
     # What to execute
     parser.add_argument('--train', action='store_true', default=False, help='Whether or not to train model')
+    parser.add_argument('--train_log', action='store_true', default=False, help='Whether or not to log training model')
+
     parser.add_argument('--test', action='store_true', default=False, help='Whether or not to run model on test set')
     parser.add_argument('--dev', action='store_true', default=False, help='Whether or not to run model on dev set')
     parser.add_argument('--attribute', action='store_true', default=False,
@@ -124,8 +126,15 @@ def parse_args(args_str=None):
     parser.add_argument('--start_at_dx', action='store_true', default=False, help=' first event starts at dx date, days')
     parser.add_argument('--start_at_dx_100', action='store_true', default=False, help='first event starts at dx date or 100 days before index, days')
     
-    parser.add_argument('--start_at_dx_60', action='store_true', default=False, help='first event starts at dx date or 100 days before index, days')
+    parser.add_argument('--start_at_dx_60', action='store_true', default=False, help='first event starts at dx date or 60 days before index, days')
+    
+    parser.add_argument('--start_at_dx_neg60', action='store_true', default=False, help='first event starts at dx date or 60 days AFTER index, days')
+    
+    parser.add_argument('--start_at_dx_neg45', action='store_true', default=False, help='first event starts at dx date or 30 days AFTER index, days')
+    
+    parser.add_argument('--start_at_dx_neg30', action='store_true', default=False, help='first event starts at dx date or 30 days AFTER index, days') 
 
+ 
     parser.add_argument('--start_noise_days', action='store_true', default=False, help='noisepast first event, days')
     
     parser.add_argument('--start_noise_len', type=int, default=30, help="upper range of event # to cut from start")
@@ -157,7 +166,9 @@ def parse_args(args_str=None):
     parser.add_argument('--tuning_metric', type=str, default='36month_auroc_c', help='Metric to judge dev set results. Possible options include auc, loss, accuracy [default: loss]')
     parser.add_argument('--epochs', type=int, default=20, help='number of epochs for train [default: 256]')
     parser.add_argument('--linear_interpolate_risk', action='store_true', default=False, help='linearily interpolate risk from init year to actual year at cancer.') #
-    parser.add_argument('--class_bal', action='store_true', default=True, help='Whether to apply a weighted sampler to balance between the classes on each batch.')
+    parser.add_argument('--class_bal', action='store_true', default=False, help='Whether to apply a weighted sampler to balance between the classes on each batch.')
+    parser.add_argument('--dev_bal', action='store_true', default=False, help='Whether to apply a weighted sampler to balance between the classes on each batch for devs .')
+
     # TODO: class_bal should be removed or not 'store_true
 
     # evaluation

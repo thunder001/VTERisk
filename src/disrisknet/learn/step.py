@@ -27,7 +27,7 @@ def model_step(batch, models, optimizers, train_model,  args):
         - models: dict of models. The main model, named "model" must return logit, hidden, activ
         - optimizers: dict of optimizers for models
         - train_model: whether or not to compute backward on loss
-        - args: various runtime args such as batch_split etc
+        - args: various runtime args such probability to as batch_split etc
         returns:
         - loss: scalar for loss on batch as a tensor
         - reg_loss: scalar for regularization loss on batch as a tensor

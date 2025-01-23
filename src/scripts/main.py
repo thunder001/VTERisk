@@ -88,9 +88,23 @@ if __name__ == '__main__':
         logger_main.log("Dump results")
 
     print()
+    if args.train_log:
+        print("-------------\nTrain")
+        #args.class_bal = False
+        train_stats, train_preds = train.eval_model(train_data, 'train', model, args)
+        print("Save dev results to {}".format(args.save_path))
+        logger_main.log("VALIDATION")
+        args_dict = vars(args).copy(); del args_dict['code_to_index_map']; pickle.dump(args_dict, open(args.save_path, 'wb'))
+        pickle.dump(train_stats, open("{}.{}".format(args.save_path, "train_stats"), 'wb'))
+        pickle.dump(train_preds, open("{}.{}".format(args.save_path, "train_preds"), 'wb'))
+        del train_stats, train_preds
+        logger_main.log("Dump results")
+
+        
+    print()
     if args.dev:
         print("-------------\nDev")
-        args.class_bal = False
+        #args.class_bal = False
         dev_stats, dev_preds = train.eval_model(dev_data, 'dev', model, args)
         print("Save dev results to {}".format(args.save_path))
         logger_main.log("VALIDATION")
@@ -120,8 +134,8 @@ if __name__ == '__main__':
         model_for_attribution = AttributionModel(model)
         print(model_for_attribution.model)
         # for month_idx in args.month_endpoints:
-        # for month_idx in [3]:
-        for month_idx in [0, 1, 2]:
+        for month_idx in [3]:
+        #for month_idx in [0, 1, 2]:
             test_attribution, test_censored_attribution = attribute.compute_attribution(
                 attribution_set, model_for_attribution, args, month_idx)
             print("Save test results to {}".format(args.save_path))

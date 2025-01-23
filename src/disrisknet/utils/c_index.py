@@ -1,6 +1,6 @@
 ## Adapted from: https://raw.githubusercontent.com/CamDavidsonPilon/lifelines/master/lifelines/utils/concordance.py
 import numpy as np
-from lifelines.utils.btree import _BTree
+#from lifelines.utils.btree import _BTree
 import pdb
 
 

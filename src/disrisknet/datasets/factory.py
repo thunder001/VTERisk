@@ -59,7 +59,7 @@ def build_code_to_index_map(args):
 
     if args.disease_code_system == 'phe_lab':
         pkl_name_phe = 'src/data/all_observed_phe.pkl'
-        pkl_name_lab = 'src/data/all_observed_lab.pkl'
+        pkl_name_lab = 'src/data/new_lab.pkl'
         with open(pkl_name_phe, 'rb') as f:
                 pkl_codes_phe = pickle.load(f)
         all_observed_codes_phe = pkl_codes_phe['phe']
