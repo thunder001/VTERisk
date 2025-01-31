@@ -268,27 +268,6 @@ redo_frequency_on_dev = function(Pdev,P,  d1 = 1, d2 = 1, eps = -1, inflate_neg=
   return(Repdev)
 }
 
-try_I1 = function(){
-  
-  
-  cv_logit_1 = function(Ptrain, test ){
-    Ptrain$pos_freq = ifelse(Ptrain$y==1,Ptrain$Freq, 1 )
-    train_cv = cv.glmnet(x = cbind(1, logit(Ptrain$p) ),family = 'binomial', y = Ptrain$y,  weights = (1/Ptrain$Freq)^1.25,
-                         type.measure = 'mse' , intercept = FALSE , nfolds = 20 )
-    cv_pred = predict(train_cv, newx = cbind(1,  logit (test$probs)), type = 'response' )
-    cv_pred
-  }
-  
-  
-  Dev1_bal = redo_frequency_on_dev(Pdev1, P1, d1 = 3, d2= - .5, eps = -1, inflate_neg = TRUE)
-  cv1_test = cv_logit (Dev1_bal, test1) 
-  P.cv =  data.frame(p = as.numeric(cv1_test), y = ifelse(test1$golds=="True", 1, 0)  )
-  calibration_plot(data = P.cv, obs = 'y', pred = 'p', x_lim = c(0,.25), y_lim = c(0,.25), 
-                   xlab = "Binned Pred (Interval 1: 0-3 Months after Index Date)", nTiles =10)
-  
-
-  
-  }
 
 #Dev1_balanced = redo_frequency_on_dev(Pdev1, P1, d1 = 2, d2 = .5, eps = -.5)
 #Dev2_balanced = redo_frequency_on_dev(Pdev2, P2,d1 = 2, d2 = .5, eps = -.5)
@@ -328,7 +307,6 @@ spline_pred = function(Ptrain, test , knots = 15, pen = .75 ){
   spl_pred$y
 }
 
-
 cv1 = spline_pred (Dev1_balanced, test1) 
 P.cv1 =  data.frame(p = as.numeric(cv1), y = ifelse(test1$golds=="True", 1, 0)  )
 tCal1  = calibration_plot(data = P.cv1, obs = 'y', pred = 'p', x_lim = c(0,.1), y_lim = c(0,.1), 
@@ -356,6 +334,58 @@ G34 = grid.arrange(tCal3$calibration_plot, tCal4$calibration_plot, nrow = 1)
 grid.arrange(G12, G34, nrow = 1)
  
  
+
+
+
+spline_pred_dev = function(){
+  
+  cv1 = spline_pred (Dev1_balanced, Mdevs$Y1) 
+  P.cv1 =  data.frame(p = as.numeric(cv1), y = ifelse(Mdevs$Y1$golds=="True", 1, 0)  )
+  dCal1  = calibration_plot(data = P.cv1, obs = 'y', pred = 'p', x_lim = c(0,.1), y_lim = c(0,.1), 
+                            xlab = "Binned Pred (Interval 1: 0-3 Months after Index Date)", nTiles =10)
+  
+  cv2 = spline_pred (Dev2_balanced,  Mdevs$Y2,  knots = 12, pen = 1.95) 
+  P.cv2 =  data.frame(p = as.numeric(cv2), y = ifelse( Mdevs$Y2$golds=="True", 1, 0)  )
+  tCal2  = calibration_plot(data = P.cv2, obs = 'y', pred = 'p', x_lim = c(0,.05), y_lim = c(0,.05), 
+                            xlab = "Binned Pred (Interval 2: 3-6 Months after Index Date)")
+  tCal2
+  
+  cv3 = spline_pred (Dev3_balanced,  Mdevs$Y3) 
+  P.cv3 =  data.frame(p = as.numeric(cv3), y = ifelse( Mdevs$Y3$golds=="True", 1, 0)  )
+  tCal3  = calibration_plot(data = P.cv3, obs = 'y', pred = 'p', x_lim = c(0,.05), y_lim = c(0,.05),
+                            xlab = "Binned Pred (Interval 3: 6-9 Months after Index Date)")
+  
+  cv4 = spline_pred (Dev4_balanced, test4, knots = 29, pen = .01) 
+  P.cv4 =  data.frame(p = as.numeric(cv4), y = ifelse(test4$golds=="True", 1, 0)  )
+  tCal4  = calibration_plot(data = P.cv4, obs = 'y', pred = 'p', x_lim = c(0,.05), y_lim = c(0,.05), 
+                            xlab = "Binned Pred (Interval 4: 9-12 Months after Index Date)")
+  #tCal4
+  
+}
+
+
+
+try_I1_Temperation = function(){
+  
+  
+  cv_logit_1 = function(Ptrain, test ){
+    Ptrain$pos_freq = ifelse(Ptrain$y==1,Ptrain$Freq, 1 )
+    train_cv = cv.glmnet(x = cbind(1, logit(Ptrain$p) ),family = 'binomial', y = Ptrain$y,  weights = (1/Ptrain$Freq)^1.25,
+                         type.measure = 'mse' , intercept = FALSE , nfolds = 20 )
+    cv_pred = predict(train_cv, newx = cbind(1,  logit (test$probs)), type = 'response' )
+    cv_pred
+  }
+  
+  
+  Dev1_bal = redo_frequency_on_dev(Pdev1, P1, d1 = 3, d2= - .5, eps = -1, inflate_neg = TRUE)
+  cv1_test = cv_logit (Dev1_bal, test1) 
+  P.cv =  data.frame(p = as.numeric(cv1_test), y = ifelse(test1$golds=="True", 1, 0)  )
+  calibration_plot(data = P.cv, obs = 'y', pred = 'p', x_lim = c(0,.25), y_lim = c(0,.25), 
+                   xlab = "Binned Pred (Interval 1: 0-3 Months after Index Date)", nTiles =10)
+  
+  
+  
+}
 
 confu = function(p, yy, THRESH=.5){
   CM = confusionMatrix( ifelse(p > THRESH,1,0) %>% as.factor(), yy %>% as.factor())
@@ -512,7 +542,7 @@ harmonic_mean_thresh = function(){
     
 
 }
-# find optimal threshold
+
 find_optim_threshold = function(){
   
   library(Metrics) 
@@ -534,8 +564,6 @@ find_optim_threshold = function(){
     optim_1 =range [ which.max(harm)]
     list( confu (P.cv$p,  P.cv$y,   optim_1  ), optim_1)
   }
-  
-  
   
   Conf1 = make_F1_confu (.025+ 1:4000/40000, P.cv1, 1)
   Conf2 = make_F1_confu (.025+ 1:4000/40000 , P.cv2,  2) 

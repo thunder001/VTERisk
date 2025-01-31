@@ -152,18 +152,14 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         
         if self.args.start_at_dx:
             valid_ind =  [i  > patient['dx_date'] for i in ev_dates]
-                    
-        elif self.args.start_at_dx_100:
-            days_before_index =  datetime.timedelta( self.args.max_days_before_index )
-            dx100 = patient['dx_date'] - datetime.timedelta( 100 )
-            if dx100 >  patient['index_date']:
-                valid_ind =    [i +days_before_index > (patient['index_date'] - datetime.timedelta(100)) for i in ev_dates]
-            else:
-                valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]          
-     
+                         
         elif self.args.start_at_dx_60:           
             dx60 = patient['dx_date'] - datetime.timedelta( 60 )    
             valid_ind =    [i  >  dx60 for i in ev_dates]
+        
+        elif self.args.start_at_dx_100:
+            dx100 = patient['dx_date'] - datetime.timedelta( 100 )    
+            valid_ind =    [i  >  dx100 for i in ev_dates]
                 
         elif self.args.start_at_dx_neg30:           
             days_before_index =  datetime.timedelta( self.args.max_days_before_index )
@@ -188,7 +184,15 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                 valid_ind =    [i +days_before_index > (patient['index_date'] + datetime.timedelta(60)) for i in ev_dates]
             else:
                 valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]          
-
+        
+        elif self.args.start_at_dx_neg100:
+            days_before_index =  datetime.timedelta( self.args.max_days_before_index )
+            dx100 = patient['dx_date'] + datetime.timedelta( 100 )
+            if dx100 >  patient['index_date']:
+                valid_ind =    [i +days_before_index > (patient['index_date']+ datetime.timedelta(100)) for i in ev_dates]
+            else:
+                valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]          
+     
         else:
             days_before_index =  datetime.timedelta( self.args.max_days_before_index )
             valid_ind =  [i + days_before_index > patient['index_date'] for i in ev_dates]
