@@ -42,17 +42,27 @@ class AttributionModel(nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
-    #def forward(self, x, age_seq, time_seq, dx_seq, batch):
-    #    batch['age_seq'] = age_seq
-    #    batch['time_seq'] = time_seq
-    #    batch['dx_seq'] = dx_seq
+    def forward(self, x, age_seq, time_seq, dx_seq, ind_seq, sex, race, bmi):
+       batch=dict()
+       batch['age_seq'] = age_seq
+       batch['time_seq'] = time_seq
+       batch['dx_seq'] = dx_seq
+       batch['ind_seq'] = ind_seq
+       batch['sex'] = sex
+       batch['race'] = race
+       batch['bmi'] = bmi
+       
+       y = self.model(x, batch=batch)
+       return y[0]
+    
+    # def forward(self, x, batch):
     #    y = self.model(x, batch=batch)
     #    return y[0]
-    def forward(self, x, age_seq, time_seq, batch):
-        batch['age_seq'] = age_seq
-        batch['time_seq'] = time_seq
-        y = self.model(x, batch = batch)
-        return y[0]
+    # def forward(self, x, age_seq, time_seq, batch):
+    #     batch['age_seq'] = age_seq
+    #     batch['time_seq'] = time_seq
+    #     y = self.model(x, batch = batch)
+    #     return y[0]
     #def forward(self, x):
     #    y = self.model(x)
     #    return y[0]

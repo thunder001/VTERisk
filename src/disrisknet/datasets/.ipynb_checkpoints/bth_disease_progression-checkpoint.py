@@ -160,7 +160,21 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         elif self.args.start_at_dx_100:
             dx100 = patient['dx_date'] - datetime.timedelta( 100 )    
             valid_ind =    [i  >  dx100 for i in ev_dates]
-                
+        
+         
+        elif self.args.start_at_dx_130:
+            dx130 = patient['dx_date'] - datetime.timedelta( 130 )    
+            valid_ind =    [i  >  dx130 for i in ev_dates]
+        
+        
+        elif self.args.start_at_dx_150:
+            dx150 = patient['dx_date'] - datetime.timedelta( 150 )    
+            valid_ind =    [i  >  dx150 for i in ev_dates]
+        
+        elif self.args.start_at_dx_200:
+            dx200 = patient['dx_date'] - datetime.timedelta( 200 )    
+            valid_ind =    [i  >  dx200 for i in ev_dates]     
+        
         elif self.args.start_at_dx_neg30:           
             days_before_index =  datetime.timedelta( self.args.max_days_before_index )
             dx30 = patient['dx_date'] + datetime.timedelta( 30 )

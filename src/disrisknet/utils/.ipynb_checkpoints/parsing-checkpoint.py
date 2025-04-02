@@ -53,6 +53,16 @@ def parse_args(args_str=None):
     parser.add_argument('--dev', action='store_true', default=False, help='Whether or not to run model on dev set')
     parser.add_argument('--attribute', action='store_true', default=False,
                         help='Whether or not to run interpretation on test set')
+    parser.add_argument('--neg_attribute', action='store_true', default=False,
+                        help='Whether or not to run interpretation on test set for negative patients')
+    parser.add_argument('--both_attribute', action='store_true', default=False,
+                        help='Whether or not to run interpretation on test set for both pos and neg patients')
+    
+    parser.add_argument('--attribute_2files', action='store_true', default=False,
+                        help='Whether or not to run interpretation on split up test ')
+    
+    parser.add_argument('--Interval', type=str, default='1', help='specify which interval for prediction')
+    
     parser.add_argument('--cross_eval', action='store_true', default=False,
                         help='Whether or not to run cross evaluation')
     # Device level information
@@ -124,26 +134,31 @@ def parse_args(args_str=None):
 
     parser.add_argument('--start_noise', action='store_true', default=False, help='noisepast first event')
     parser.add_argument('--start_at_dx', action='store_true', default=False, help=' first event starts at dx date, days')
+    
+    parser.add_argument('--start_at_dx_200', action='store_true', default=False, help='first event starts at dx date or 200 days before index, days')
+
+    parser.add_argument('--start_at_dx_150', action='store_true', default=False, help='first event starts at dx date or 150 days before index, days')
+    
+    parser.add_argument('--start_at_dx_130', action='store_true', default=False, help='first event starts at dx date or 130 days before index, days')
+    
     parser.add_argument('--start_at_dx_100', action='store_true', default=False, help='first event starts at dx date or 100 days before index, days')
     
     parser.add_argument('--start_at_dx_60', action='store_true', default=False, help='first event starts at dx date or 60 days before index, days')
     
     parser.add_argument('--start_at_dx_neg60', action='store_true', default=False, help='first event starts at dx date or 60 days AFTER index, days')
-    
-    parser.add_argument('--start_at_dx_neg45', action='store_true', default=False, help='first event starts at dx date or 30 days AFTER index, days')
-    
+        
     parser.add_argument('--start_at_dx_neg30', action='store_true', default=False, help='first event starts at dx date or 30 days AFTER index, days') 
 
  
-    parser.add_argument('--start_noise_days', action='store_true', default=False, help='noisepast first event, days')
-    
+    parser.add_argument('--start_noise_days', action='store_true', default=False, help='noisepast first event, days')    
     parser.add_argument('--start_noise_len', type=int, default=30, help="upper range of event # to cut from start")
     parser.add_argument('--filter_max_len', action='store_true', default=False, help='filter max length from bth')
     parser.add_argument('--max_days_before_index', type=int, default=365, help="Min num events to include a patient")
 
     
     
-    
+    parser.add_argument('--days_bin', type=int, default=90, help="for attr, how many days per bin")
+
 
     parser.add_argument('--time_embed_dim', type=int, default=128, help="Representation size at for time embeddings.")
     parser.add_argument('--pred_mask', action='store_true', default=False, help='Pred masked out tokens.')

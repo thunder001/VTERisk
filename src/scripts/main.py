@@ -18,6 +18,7 @@ from disrisknet.utils.learn import get_dataset_loader
 from torch.nn.parallel import DistributedDataParallel as DDP
 from collections import Counter
 from copy import deepcopy
+import pandas as pd
 
 if __name__ == '__main__':
     DATE_FORMAT_STR = "%Y-%m-%d:%H-%M-%S"
@@ -38,7 +39,6 @@ if __name__ == '__main__':
     logger_main.log("The main.py started at {}".format(time.asctime(time.localtime(start_time))))
     print("CUDA:", torch.cuda.is_available())
 
-    # args.local_rank = os.environ['LOCAL_RANK']
     print("Loading Dataset...\n")
     train_data, dev_data, test_data, attribution_set, cross_eval_data, args = dataset_factory.get_dataset(args)
     print("Number of patient for -Train:{},-Dev:{}, -Test:{}, --Attr:{}, --Cross: {}\n".format(
@@ -49,8 +49,6 @@ if __name__ == '__main__':
     if args.snapshot is None:
         print("Building model...\n")
         model = model_factory.get_model(args)
-        # model = torch.nn.DataParallel(model)
-        # model.to(args.device)
     else:
         print("Loading model...\n")
         model = model_factory.load_model(args.snapshot, args)
@@ -60,11 +58,6 @@ if __name__ == '__main__':
     if torch.get_num_threads() < args.num_workers:
         torch.set_num_threads(args.num_workers)
         print("Adding threads count to {}.".format(torch.get_num_threads()))
-
-    # print("\nParameters:")
-    # for attr, value in sorted(args.__dict__.items()):
-    #     if attr not in ['optimizer_state', 'code_to_index_map', 'all_codes', 'all_codes_p']:
-    #         print("\t{}={}".format(attr.upper(), value))
     logger_main.log("Build model")
 
     print()
@@ -130,23 +123,66 @@ if __name__ == '__main__':
 
     print()
     if args.attribute:
+
         print("-------------\nAttribution")
         model_for_attribution = AttributionModel(model)
         print(model_for_attribution.model)
-        # for month_idx in args.month_endpoints:
-        for month_idx in [3]:
-        #for month_idx in [0, 1, 2]:
-            test_attribution, test_censored_attribution = attribute.compute_attribution(
-                attribution_set, model_for_attribution, args, month_idx)
-            print("Save test results to {}".format(args.save_path))
-            logger_main.log("ATTRIBUTION")
+        for month_idx in [0,1 ]:
+            if args.neg_attribute:
+                test_attribution, test_censored_attribution = attribute.compute_attribution(
+                    attribution_set, model_for_attribution, args, month_idx, neg=True)                
+                cens0_attr_csvname = "I{}_{}0_Neg_attribution.csv".format(args.Interval, args.days_bin)
+                # default is 90 days bin, only need 1
 
-            pickle.dump(test_attribution,
-                        open("{}.{}_{}".format(args.save_path, "test_attribution", month_idx), 'wb'))
-            pickle.dump(test_censored_attribution,
-                        open("{}.{}_{}".format(args.save_path, "test_censored_attribution", month_idx), 'wb'))
-            logger_main.log("Dump results")
+                C_I = [v for v in test_censored_attribution.items() ]
+                
+                C_i0 = C_I[0][1]
+                L0 = []
+                for a in  C_i0.keys():
+                    L0.append( ( [x.item() for x in  C_i0[a] ] ))
+                D0 = pd.DataFrame(L0, C_i0.keys())
+                D0.to_csv(cens0_attr_csvname)
+                logger_main.log("Dump results")
+                #print("Save test results to {}".format(args.save_path))
+                logger_main.log("ATTRIBUTION")
 
+            elif args.both_attribute:
+                test_attribution, test_censored_attribution = attribute.compute_attribution(
+                    attribution_set, model_for_attribution, args, month_idx, both=True)                
+                cens0_attr_csvname = "I{}_{}0_Both_attribution.csv".format(args.Interval, args.days_bin)
+                # default is 90 days bin, only need 1
+                C_I = [v for v in test_censored_attribution.items() ]
+                C_i0 = C_I[0][1]
+                L0 = []
+                for a in  C_i0.keys():
+                    L0.append( ( [x.item() for x in  C_i0[a] ] ))
+                D0 = pd.DataFrame(L0, C_i0.keys())
+                D0.to_csv(cens0_attr_csvname)
+                logger_main.log("Dump results")
+                #print("Save test results to {}".format(args.save_path))
+                logger_main.log("ATTRIBUTION")
+            
+            else:
+                test_attribution, test_censored_attribution = attribute.compute_attribution(
+                    attribution_set, model_for_attribution, args, month_idx)
+                cens0_attr_csvname = "I{}_{}0_attribution.csv".format(args.Interval, args.days_bin)
+                C_I = [v for v in test_censored_attribution.items() ]
+
+                C_i0 = C_I[0][1]
+                L0 = []
+                for a in  C_i0.keys():
+                    L0.append( ( [x.item() for x in  C_i0[a] ] ))
+                D0 = pd.DataFrame(L0, C_i0.keys())
+                D0.to_csv(cens0_attr_csvname)
+                logger_main.log("Dump results")
+                logger_main.log("ATTRIBUTION")
+   
+             
+            
+          
+
+     
+            
     if args.cross_eval:
         print("-------------\nTest")
         cross_eval_stats, cross_eval_preds = train.eval_model(cross_eval_data, 'test', model, args)

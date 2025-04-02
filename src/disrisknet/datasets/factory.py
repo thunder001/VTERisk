@@ -67,6 +67,12 @@ def build_code_to_index_map(args):
                 pkl_codes_lab = pickle.load(f)
         all_observed_codes_lab = pkl_codes_lab['lab']
         all_observed_codes = all_observed_codes_phe + all_observed_codes_lab
+        
+    if args.disease_code_system == 'lab':
+        pkl_name_lab = 'src/data/new_lab.pkl'
+        with open(pkl_name_lab, 'rb') as f:
+                pkl_codes_lab = pickle.load(f)
+        all_observed_codes =  pkl_codes_lab['lab']
  
     if args.disease_code_system == 'phe_compositelab':
         pkl_name_phe = 'src/data/all_observed_phe.pkl'
@@ -78,19 +84,6 @@ def build_code_to_index_map(args):
                 pkl_codes_lab = pickle.load(f)
         all_observed_codes_lab = pkl_codes_lab['lab']
         all_observed_codes = all_observed_codes_phe + all_observed_codes_lab        
-        
-    
-    if args.disease_code_system == 'phe_CMP':
-        pkl_name_phe = 'src/data/all_observed_phe.pkl'
-        pkl_name_lab = 'src/data/all_observed_CMP.pkl'
-        with open(pkl_name_phe, 'rb') as f:
-                pkl_codes_phe = pickle.load(f)
-        all_observed_codes_phe = pkl_codes_phe['phe']
-        with open(pkl_name_lab, 'rb') as f:
-                pkl_codes_lab = pickle.load(f)
-        all_observed_codes_lab = pkl_codes_lab['lab']
-        all_observed_codes = all_observed_codes_phe + all_observed_codes_lab
-     
         
 
     if args.disease_code_system == 'icd':
@@ -225,13 +218,25 @@ def get_dataset(args):
         attribution_set = []
     
     if args.attribute:
-        fname = os.listdir(args.test_data_dir)[args.data_file_idx]
-        data_path = os.path.join(args.test_data_dir, fname)
-        metadata = json.load(open(data_path, 'r'))
+        if args.attribute_2files:
+            fname = os.listdir(args.test_data_dir) 
+            data_path1 = os.path.join(args.test_data_dir, fname[0])
+            data_path2 = os.path.join(args.test_data_dir, fname[1])
+            
+            metadata1 = json.load(open(data_path1, 'r'))
+            metadata2 = json.load(open(data_path2, 'r'))
+            metadata = metadata1| metadata2
+        else:
+            fname = os.listdir(args.test_data_dir)[args.data_file_idx]
+            data_path = os.path.join(args.test_data_dir, fname)
+            metadata = json.load(open(data_path, 'r'))
+            
         attribution_set = dataset_class(metadata, args, 'test')
         attribution_set.split_group = "attribute"
     else:
         attribution_set=[]
+    
+         
     
     if args.cross_eval:
         cross_set = dataset_class(metadata, args, 'all')
