@@ -128,6 +128,7 @@ if __name__ == '__main__':
         model_for_attribution = AttributionModel(model)
         print(model_for_attribution.model)
         for month_idx in [0,1 ]:
+            
             if args.neg_attribute:
                 test_attribution, test_censored_attribution = attribute.compute_attribution(
                     attribution_set, model_for_attribution, args, month_idx, neg=True)                

@@ -156,16 +156,12 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         elif self.args.start_at_dx_60:           
             dx60 = patient['dx_date'] - datetime.timedelta( 60 )    
             valid_ind =    [i  >  dx60 for i in ev_dates]
-        
         elif self.args.start_at_dx_100:
             dx100 = patient['dx_date'] - datetime.timedelta( 100 )    
-            valid_ind =    [i  >  dx100 for i in ev_dates]
-        
-         
+            valid_ind =    [i  >  dx100 for i in ev_dates]         
         elif self.args.start_at_dx_130:
             dx130 = patient['dx_date'] - datetime.timedelta( 130 )    
             valid_ind =    [i  >  dx130 for i in ev_dates]
-        
         
         elif self.args.start_at_dx_150:
             dx150 = patient['dx_date'] - datetime.timedelta( 150 )    
@@ -174,6 +170,34 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         elif self.args.start_at_dx_200:
             dx200 = patient['dx_date'] - datetime.timedelta( 200 )    
             valid_ind =    [i  >  dx200 for i in ev_dates]     
+        elif self.args.start_at_dx_270:
+            dx270 = patient['dx_date'] - datetime.timedelta( 270 )    
+            valid_ind =    [i  >  dx270 for i in ev_dates]     
+        elif self.args.start_at_dx_300:
+            dx300 = patient['dx_date'] - datetime.timedelta( 300 )    
+            valid_ind =    [i  >  dx300 for i in ev_dates]     
+        
+        elif self.args.start_at_dx_400:
+            dx400 = patient['dx_date'] - datetime.timedelta( 400 )    
+            valid_ind =    [i  >  dx400 for i in ev_dates]  
+        elif self.args.start_at_dx_500:
+            dx500 = patient['dx_date'] - datetime.timedelta( 500 )    
+            valid_ind =    [i  >  dx500 for i in ev_dates]  
+            
+        elif self.args.start_at_dx_600:
+            dx600 = patient['dx_date'] - datetime.timedelta( 600 )    
+            valid_ind =    [i  >  dx600 for i in ev_dates]  
+                
+        elif self.args.start_at_dx_750:
+            dx750 = patient['dx_date'] - datetime.timedelta( 750 )    
+            valid_ind =    [i  >  dx750 for i in ev_dates]  
+        
+        elif self.args.start_at_dx_1000:
+            dx1000 = patient['dx_date'] - datetime.timedelta( 1000 )    
+            valid_ind =    [i  >  dx1000 for i in ev_dates]          
+        elif self.args.start_at_dx_1500:
+            dx1500 = patient['dx_date'] - datetime.timedelta( 1500 )    
+            valid_ind =    [i  >  dx1500 for i in ev_dates]  
         
         elif self.args.start_at_dx_neg30:           
             days_before_index =  datetime.timedelta( self.args.max_days_before_index )
@@ -182,31 +206,14 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                 valid_ind =    [i +days_before_index > (patient['index_date'] + datetime.timedelta(30)) for i in ev_dates]
             else:
                 valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]          
-        
-        elif self.args.start_at_dx_neg45:           
-            days_before_index =  datetime.timedelta( self.args.max_days_before_index )
-            dx45 = patient['dx_date'] + datetime.timedelta( 45 )
-            if dx45 >  patient['index_date']:
-                valid_ind =    [i +days_before_index > (patient['index_date'] + datetime.timedelta(45)) for i in ev_dates]
-            else:
-                valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]          
-        
+      
         elif self.args.start_at_dx_neg60:           
             days_before_index =  datetime.timedelta( self.args.max_days_before_index )
             dx100 = patient['dx_date'] + datetime.timedelta( 60 )
             if dx100 >  patient['index_date']:
                 valid_ind =    [i +days_before_index > (patient['index_date'] + datetime.timedelta(60)) for i in ev_dates]
             else:
-                valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]          
-        
-        elif self.args.start_at_dx_neg100:
-            days_before_index =  datetime.timedelta( self.args.max_days_before_index )
-            dx100 = patient['dx_date'] + datetime.timedelta( 100 )
-            if dx100 >  patient['index_date']:
-                valid_ind =    [i +days_before_index > (patient['index_date']+ datetime.timedelta(100)) for i in ev_dates]
-            else:
-                valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]          
-     
+                valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]                
         else:
             days_before_index =  datetime.timedelta( self.args.max_days_before_index )
             valid_ind =  [i + days_before_index > patient['index_date'] for i in ev_dates]
@@ -259,22 +266,45 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                         events_to_date = events[ int(idx_start)   :idx + 1]
 
                 if len(events_to_date)> self.args.min_events_length:
-
                     codes = [e['codes'] for e in events_to_date]
-                    _, time_seq = self.get_time_seq(events_to_date, events_to_date[-1]['admit_date'])
+
+                    if self.args.embed_at_start:
+                        _, time_seq = self.get_time_seq(events_to_date, events_to_date[0]['admit_date'])
+                    elif self.args.time_seq_cos:
+                        _, time_seq = self.get_time_seq_cos(events_to_date, events_to_date[-1]['admit_date'])
+                    else:
+                        _, time_seq = self.get_time_seq(events_to_date, events_to_date[-1]['admit_date'])
 
                     if self.args.ageseq_event: 
                         age, age_seq = self.get_event_seq( events_to_date[-1]['admit_date'] , patient['dob'])
                     else:
                         age, age_seq = self.get_time_seq( events_to_date , patient['dob'])
 
-                    if self.args.dxseq_event: 
-                        dx, dx_seq = self.get_event_seq(patient['dx_date'],patient['dob'])            
+                    if self.args.dxseq_trunc:       
+                        dx, dx_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['dx_date'])       
+                    elif self.args.dxseq_trunc90:       
+                        dx, dx_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['dx_date']-datetime.timedelta(90))       
+                    elif self.args.dxseq_K:
+                        dx, dx_seq = self.get_time_seq_cos_K( events_to_date , patient['dx_date']) 
+                    elif self.args.dxseq_J: 
+                        dx, dx_seq = self.get_time_seq_cos_J( events_to_date , patient['dx_date'])      
+                    elif self.args.dxseq_J180: 
+                        dx, dx_seq = self.get_time_seq_cos_J( events_to_date , patient['dx_date'] - datetime.timedelta(180) ) 
+                    elif self.args.dxseq_cos: 
+                        dx, dx_seq = self.get_time_seq_cos( events_to_date , patient['dx_date']) 
                     else:
                         dx, dx_seq = self.get_time_seq( events_to_date  ,patient['dx_date'])  
 
-                    if self.args.indseq_event: 
-                        ind, ind_seq= self.get_event_seq(patient['index_date'],patient['dob'])            
+                    if self.args.indseq_trunc: 
+                        ind, ind_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['index_date'])   
+                    elif self.args.indseq_trunc90: 
+                        ind, ind_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['index_date']- datetime.timedelta(90)) 
+                    elif self.args.indseq_K:
+                        ind, ind_seq = self.get_time_seq_cos_K( events_to_date , patient['index_date'])       
+                    elif self.args.indseq_J: 
+                        ind, ind_seq = self.get_time_seq_cos_J( events_to_date , patient['index_date'])
+                    elif self.args.indseq_cos: 
+                        ind, ind_seq = self.get_time_seq_cos( events_to_date , patient['index_date']) 
                     else:
                         ind, ind_seq = self.get_time_seq( events_to_date , patient['index_date'])        
 
@@ -303,14 +333,54 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                                     'exam': len(events_to_date)})
 
         return self.add_noise(samples)
-
-    def get_time_seq(self, events, reference_date):
+    
+    def get_time_seq_cos(self, events, reference_date):
         deltas = np.array([abs((reference_date - event['admit_date']).days) for event in events])
         multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
                                                num=self.args.time_embed_dim))
-
         deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
         positional_embeddings = np.cos(deltas * multipliers)
+        return max(deltas), positional_embeddings
+    
+    
+    
+    
+    def get_time_seq_cos_J (self, events, reference_date):
+        deltas = np.array([((event['admit_date'] - reference_date  ).days) for event in events])
+        deltas[deltas<0]=0 # everything BEFORE ref is 0 (weighted equally and maximally), so weights at BaseLine(BL) all = 1, but after BL, attenuates
+        multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
+                                               num=self.args.time_embed_dim))
+        deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
+        positional_embeddings = np.cos(deltas * multipliers)
+        return max(deltas), positional_embeddings
+    
+    def get_time_seq_cos_K (self, events, reference_date):
+        deltas = np.array([((reference_date - event['admit_date']  ).days) for event in events])
+        deltas[deltas<0]=0 # everything after ref is 0 (weighted equally and maximally)
+        multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
+                                               num=self.args.time_embed_dim))
+        deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
+        positional_embeddings = np.cos(deltas * multipliers)
+        return max(deltas), positional_embeddings
+    
+
+        
+    def get_time_seq_cos_TRUNC (self, events, I_date):
+        deltas = np.array([(( event['admit_date'] - I_date ).days) for event in events])
+        deltas = deltas[deltas>=0]
+        multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
+                                               num=self.args.time_embed_dim))
+        deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
+        positional_embeddings = np.cos(deltas * multipliers)
+        return 0, positional_embeddings
+    
+    
+    def get_time_seq(self, events, reference_date):
+        deltas = np.array([((event['admit_date'] - reference_date ).days) for event in events])
+        multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
+                                               num=self.args.time_embed_dim))
+        deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
+        positional_embeddings = np.sin(deltas * multipliers)
         return max(deltas), positional_embeddings
      
     def get_event_seq(self, event, reference_date):
@@ -321,6 +391,20 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
         positional_embeddings = np.cos(deltas * multipliers)        
         return max(deltas), positional_embeddings
+    
+    def get_time_seq_PAD (self, events, reference_date):         
+        deltas = np.array([((event['admit_date']-reference_date ).days) for event in events])
+        deltas0 = deltas
+        deltas = deltas[deltas>=0]         
+        multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
+                                               num=self.args.time_embed_dim))
+        deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
+        positional_embeddings = np.cos(deltas * multipliers)
+        
+        m0 = [np.zeros(64)] * len(deltas0 )
+        where_zero_ends = len(m0) - len(deltas) 
+        m0[  where_zero_ends :  len(m0)] =  positional_embeddings [-len(deltas0):]
+        return max(deltas0), m0
     
     def class_count(self):
         # Implement for class balance
