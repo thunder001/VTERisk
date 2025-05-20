@@ -10,17 +10,15 @@ Data file in a json format
 The model need a json file having the following structure to run.  
 Note: data file needs to pre-split into train/train.json, dev/dev.json and dev/test.json. A
 
-```json
-## A Deep Learning Model to Dynamically Predict Cancer Associated Thromboembolism using Electronic Health Records from the Veteran’s Health Administration     
 
 ## Introduction
-The repository contains the code implementation used for the paper [A deep learning algorithm to predict risk of VTE from disease and lab trajectories] 
-We used disease trajectories from EHR to calculate the risk of VTE at different intervals after the assessment. The repository supports different deep learning [models](cancerrisknet/models).
+The repository contains the code implementation used for the paper "A Deep Learning Model to Dynamically Predict Cancer Associated Thromboembolism using Electronic Health Records from the Veteran’s Health Administration". 
+We used disease trajectories from EHR to calculate the risk of VTE at different intervals after the assessment. The repository supports different deep learning models.
 
 ## Usage
 ### Data structure
 
-In the data folder you can find a synthetic data with the same structure of the data used in the study. In case you want to reproduce the results on another dataset you need to generate a json file having the same structure. Phecode events and lab events (e.g. BUN0 (NA), BUN1 (below normal range), BUN2 (within normal range), BUN3 (above normal range)) are combined into single trajectories for every patient. Timestamped Outcome "VTE" needs to be encoded within the events (like the third example).
+In the data folder you can find a synthetic data with the same structure of the data used in the study. In case you want to reproduce the results on another dataset you need to generate a json file having the same structure. Phecode events and lab events (e.g. BUN0 (NA), BUN1 (below normal range), BUN2 (within normal range), BUN3 (above normal range)) are combined into single trajectories for every patient. Timestamped outcome "VTE" needs to be encoded within the events (like the third example).
 
 Note the example file is only for the train split set, dev and test sets also need to be constructed.
 
