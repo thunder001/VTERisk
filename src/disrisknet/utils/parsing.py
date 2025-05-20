@@ -211,7 +211,7 @@ def parse_args(args_str=None):
     parser.add_argument('--tuning_metric', type=str, default='36month_auroc_c', help='Metric to judge dev set results. Possible options include auc, loss, accuracy [default: loss]')
     parser.add_argument('--epochs', type=int, default=20, help='number of epochs for train [default: 256]')
     parser.add_argument('--linear_interpolate_risk', action='store_true', default=False, help='linearily interpolate risk from init year to actual year at cancer.') #
-    parser.add_argument('--class_bal', action='store_true', default=False, help='Whether to apply a weighted sampler to balance between the classes on each batch.')
+    parser.add_argument('--class_bal', action='store_true', default=True, help='Whether to apply a weighted sampler to balance between the classes on each batch.')
     parser.add_argument('--dev_bal', action='store_true', default=False, help='Whether to apply a weighted sampler to balance between the classes on each batch for devs .')
 
     # TODO: class_bal should be removed or not 'store_true
