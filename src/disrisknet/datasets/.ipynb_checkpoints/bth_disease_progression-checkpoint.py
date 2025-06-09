@@ -151,99 +151,14 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         ev_dates = [events[i]['admit_date'] for i in range(len(events))]           
         
         if self.args.start_at_dx:
-            valid_ind =  [i  > patient['dx_date'] for i in ev_dates]
-        elif self.args.start_at_dx_G:
-            Gap =  (patient['index_date'] - patient['dx_date']).days
-            dx_G = patient['dx_date'] - datetime.timedelta( 90-Gap )    
-            valid_ind =    [i  >  dx_G for i in ev_dates] 
-        elif self.args.start_at_dx_G180:
-            Gap =  (patient['index_date'] - patient['dx_date']).days
-            dx_G = patient['dx_date'] - datetime.timedelta( 180-Gap )    
-            valid_ind =    [i  >  dx_G for i in ev_dates] 
-        elif self.args.start_at_dx_H135:
-            Gap =  (patient['index_date'] - patient['dx_date']).days
-            Back = 135 - Gap*.5
-            dx_G = patient['dx_date'] - datetime.timedelta( Back )    
-            valid_ind =    [i  >  dx_G for i in ev_dates] 
-        elif self.args.start_at_dx_H180:
-            Gap =  (patient['index_date'] - patient['dx_date']).days
-            Back = 180 - Gap*.5
-            dx_G = patient['dx_date'] - datetime.timedelta( Back )    
-            valid_ind =    [i  >  dx_G for i in ev_dates] 
-        elif self.args.start_at_dx_G270:
-            Gap =  (patient['index_date'] - patient['dx_date']).days
-            dx_G = patient['dx_date'] - datetime.timedelta( 270-Gap )    
-            valid_ind =    [i  >  dx_G for i in ev_dates] 
-        elif self.args.start_at_dx_G360:
-            Gap =  (patient['index_date'] - patient['dx_date']).days
-            dx_G = patient['dx_date'] - datetime.timedelta( 360-Gap )    
-            valid_ind =    [i  >  dx_G for i in ev_dates] 
-        elif self.args.start_at_dx_D360:
-            Gap =  (patient['index_date'] - patient['dx_date']).days
-            Back = 360 - Gap*2
-            dx_G = patient['dx_date'] - datetime.timedelta( Back )    
+            dx_Gap = patient['dx_date'] - datetime.timedelta( Lookback )    
+            valid_ind =    [i  >  dx_Gap for i in ev_dates]       
+        elif self.args.start_at_dx100:
+            dx_Gap = patient['dx_date'] - datetime.timedelta( 100 )    #default, with 20 day noise
+            valid_ind =    [i  >  dx_Gap for i in ev_dates]   
+        elif self.args.start_at_index:
+            dx_G = patient['index_date'] - datetime.timedelta( Lookback )    
             valid_ind =    [i  >  dx_G for i in ev_dates]         
-        elif self.args.start_at_dx_60:           
-            dx60 = patient['dx_date'] - datetime.timedelta( 60 )    
-            valid_ind =    [i  >  dx60 for i in ev_dates]
-        elif self.args.start_at_dx_100:
-            dx100 = patient['dx_date'] - datetime.timedelta( 100 )    
-            valid_ind =    [i  >  dx100 for i in ev_dates]         
-        elif self.args.start_at_dx_130:
-            dx130 = patient['dx_date'] - datetime.timedelta( 130 )    
-            valid_ind =    [i  >  dx130 for i in ev_dates]
-        
-        elif self.args.start_at_dx_150:
-            dx150 = patient['dx_date'] - datetime.timedelta( 150 )    
-            valid_ind =    [i  >  dx150 for i in ev_dates]
-        
-        elif self.args.start_at_dx_200:
-            dx200 = patient['dx_date'] - datetime.timedelta( 200 )    
-            valid_ind =    [i  >  dx200 for i in ev_dates]     
-        elif self.args.start_at_dx_270:
-            dx270 = patient['dx_date'] - datetime.timedelta( 270 )    
-            valid_ind =    [i  >  dx270 for i in ev_dates]     
-        elif self.args.start_at_dx_300:
-            dx300 = patient['dx_date'] - datetime.timedelta( 300 )    
-            valid_ind =    [i  >  dx300 for i in ev_dates]     
-        
-        elif self.args.start_at_dx_400:
-            dx400 = patient['dx_date'] - datetime.timedelta( 400 )    
-            valid_ind =    [i  >  dx400 for i in ev_dates]  
-        elif self.args.start_at_dx_500:
-            dx500 = patient['dx_date'] - datetime.timedelta( 500 )    
-            valid_ind =    [i  >  dx500 for i in ev_dates]  
-            
-        elif self.args.start_at_dx_600:
-            dx600 = patient['dx_date'] - datetime.timedelta( 600 )    
-            valid_ind =    [i  >  dx600 for i in ev_dates]  
-                
-        elif self.args.start_at_dx_750:
-            dx750 = patient['dx_date'] - datetime.timedelta( 750 )    
-            valid_ind =    [i  >  dx750 for i in ev_dates]  
-        
-        elif self.args.start_at_dx_1000:
-            dx1000 = patient['dx_date'] - datetime.timedelta( 1000 )    
-            valid_ind =    [i  >  dx1000 for i in ev_dates]          
-        elif self.args.start_at_dx_1500:
-            dx1500 = patient['dx_date'] - datetime.timedelta( 1500 )    
-            valid_ind =    [i  >  dx1500 for i in ev_dates]  
-        
-        elif self.args.start_at_dx_neg30:           
-            days_before_index =  datetime.timedelta( self.args.max_days_before_index )
-            dx30 = patient['dx_date'] + datetime.timedelta( 30 )
-            if dx30 >  patient['index_date']:
-                valid_ind =    [i +days_before_index > (patient['index_date'] + datetime.timedelta(30)) for i in ev_dates]
-            else:
-                valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]          
-      
-        elif self.args.start_at_dx_neg60:           
-            days_before_index =  datetime.timedelta( self.args.max_days_before_index )
-            dx100 = patient['dx_date'] + datetime.timedelta( 60 )
-            if dx100 >  patient['index_date']:
-                valid_ind =    [i +days_before_index > (patient['index_date'] + datetime.timedelta(60)) for i in ev_dates]
-            else:
-                valid_ind =   [i +days_before_index > patient['dx_date'] for i in ev_dates]                
         else:
             days_before_index =  datetime.timedelta( self.args.max_days_before_index )
             valid_ind =  [i + days_before_index > patient['index_date'] for i in ev_dates]
@@ -311,17 +226,11 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                         age, age_seq = self.get_time_seq( events_to_date , patient['dob'])
 
                     if self.args.dxseq_trunc:       
-                        dx, dx_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['dx_date'])       
-                    elif self.args.dxseq_trunc90:       
-                        dx, dx_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['dx_date']-datetime.timedelta(90))          
-                    elif self.args.dxseq_truncK:       
-                        dx, dx_seq = self.get_time_seq_cos_TRUNCK( events_to_date , patient['dx_date']-datetime.timedelta(90))       
+                        dx, dx_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['dx_date'])               
                     elif self.args.dxseq_K:
                         dx, dx_seq = self.get_time_seq_cos_K( events_to_date , patient['dx_date']) 
                     elif self.args.dxseq_J: 
                         dx, dx_seq = self.get_time_seq_cos_J( events_to_date , patient['dx_date'])      
-                    elif self.args.dxseq_J180: 
-                        dx, dx_seq = self.get_time_seq_cos_J( events_to_date , patient['dx_date'] - datetime.timedelta(180) ) 
                     elif self.args.dxseq_cos: 
                         dx, dx_seq = self.get_time_seq_cos( events_to_date , patient['dx_date']) 
                     else:
@@ -329,8 +238,6 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
 
                     if self.args.indseq_trunc: 
                         ind, ind_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['index_date'])   
-                    elif self.args.indseq_trunc90: 
-                        ind, ind_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['index_date']- datetime.timedelta(90)) 
                     elif self.args.indseq_K:
                         ind, ind_seq = self.get_time_seq_cos_K( events_to_date , patient['index_date'])       
                     elif self.args.indseq_J: 
@@ -376,7 +283,6 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
     
     
     
-    
     def get_time_seq_cos_J (self, events, reference_date):
         deltas = np.array([((event['admit_date'] - reference_date  ).days) for event in events])
         deltas[deltas<0]=0 # everything BEFORE ref is 0 (weighted equally and maximally), so weights at BaseLine(BL) all = 1, but after BL, attenuates
@@ -395,7 +301,6 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         positional_embeddings = np.cos(deltas * multipliers)
         return max(deltas), positional_embeddings
     
-
         
     def get_time_seq_cos_TRUNC (self, events, I_date):
         deltas = np.array([(( event['admit_date'] - I_date ).days) for event in events])
@@ -432,20 +337,7 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
         positional_embeddings = np.cos(deltas * multipliers)        
         return max(deltas), positional_embeddings
-    
-    def get_time_seq_PAD (self, events, reference_date):         
-        deltas = np.array([((event['admit_date']-reference_date ).days) for event in events])
-        deltas0 = deltas
-        deltas = deltas[deltas>=0]         
-        multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
-                                               num=self.args.time_embed_dim))
-        deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
-        positional_embeddings = np.cos(deltas * multipliers)
-        
-        m0 = [np.zeros(64)] * len(deltas0 )
-        where_zero_ends = len(m0) - len(deltas) 
-        m0[  where_zero_ends :  len(m0)] =  positional_embeddings [-len(deltas0):]
-        return max(deltas0), m0
+  
     
     def class_count(self):
         # Implement for class balance
