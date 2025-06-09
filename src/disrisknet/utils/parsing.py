@@ -128,8 +128,8 @@ def parse_args(args_str=None):
     
     parser.add_argument('--use_dxtime_embed', action='store_true', default=False, help='Wether or not to condition embeddings by time from diagnosis date')
     parser.add_argument('--dxseq_trunc', action='store_true', default=False, help='')
+    parser.add_argument('--dxseq_truncK', action='store_true', default=False, help='')
     parser.add_argument('--dxseq_trunc90', action='store_true', default=False, help='')
-
     parser.add_argument('--indseq_trunc', action='store_true', default=False, help=' ')
     parser.add_argument('--indseq_trunc90', action='store_true', default=False, help=' ')
      
@@ -151,8 +151,16 @@ def parse_args(args_str=None):
 
     parser.add_argument('--start_noise', action='store_true', default=False, help='noisepast first event')
     parser.add_argument('--start_at_dx', action='store_true', default=False, help=' first event starts at dx date, days')
+    parser.add_argument('--start_at_dx_G', action='store_true', default=False, help=' first event depending on gap between dx and index date, days')
+    parser.add_argument('--start_at_dx_G180', action='store_true', default=False, help=' first event depending on gap between dx and index date, days')
+    parser.add_argument('--start_at_dx_H135', action='store_true', default=False, help=' first event depending on gap between dx and index date, days')
+    parser.add_argument('--start_at_dx_H180', action='store_true', default=False, help=' first event depending on gap between dx and index date, days')
 
-    
+    parser.add_argument('--start_at_dx_G270', action='store_true', default=False, help=' first event depending on gap between dx and index date, days')
+    parser.add_argument('--start_at_dx_G360', action='store_true', default=False, help=' first event depending on gap between dx and index date, days')
+    parser.add_argument('--start_at_dx_D360', action='store_true', default=False, help=' first event depending on gap between dx and index date, days')
+
+     
     parser.add_argument('--start_at_dx_1500', action='store_true', default=False, help='first event starts at  1500 days before dx, days')    
     parser.add_argument('--start_at_dx_1000', action='store_true', default=False, help='first event starts at  1000 days before dx, days')
     parser.add_argument('--start_at_dx_750', action='store_true', default=False, help='first event starts at  750 days before dx, days')

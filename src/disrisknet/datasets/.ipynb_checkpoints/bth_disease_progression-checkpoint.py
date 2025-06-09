@@ -152,7 +152,37 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         
         if self.args.start_at_dx:
             valid_ind =  [i  > patient['dx_date'] for i in ev_dates]
-                         
+        elif self.args.start_at_dx_G:
+            Gap =  (patient['index_date'] - patient['dx_date']).days
+            dx_G = patient['dx_date'] - datetime.timedelta( 90-Gap )    
+            valid_ind =    [i  >  dx_G for i in ev_dates] 
+        elif self.args.start_at_dx_G180:
+            Gap =  (patient['index_date'] - patient['dx_date']).days
+            dx_G = patient['dx_date'] - datetime.timedelta( 180-Gap )    
+            valid_ind =    [i  >  dx_G for i in ev_dates] 
+        elif self.args.start_at_dx_H135:
+            Gap =  (patient['index_date'] - patient['dx_date']).days
+            Back = 135 - Gap*.5
+            dx_G = patient['dx_date'] - datetime.timedelta( Back )    
+            valid_ind =    [i  >  dx_G for i in ev_dates] 
+        elif self.args.start_at_dx_H180:
+            Gap =  (patient['index_date'] - patient['dx_date']).days
+            Back = 180 - Gap*.5
+            dx_G = patient['dx_date'] - datetime.timedelta( Back )    
+            valid_ind =    [i  >  dx_G for i in ev_dates] 
+        elif self.args.start_at_dx_G270:
+            Gap =  (patient['index_date'] - patient['dx_date']).days
+            dx_G = patient['dx_date'] - datetime.timedelta( 270-Gap )    
+            valid_ind =    [i  >  dx_G for i in ev_dates] 
+        elif self.args.start_at_dx_G360:
+            Gap =  (patient['index_date'] - patient['dx_date']).days
+            dx_G = patient['dx_date'] - datetime.timedelta( 360-Gap )    
+            valid_ind =    [i  >  dx_G for i in ev_dates] 
+        elif self.args.start_at_dx_D360:
+            Gap =  (patient['index_date'] - patient['dx_date']).days
+            Back = 360 - Gap*2
+            dx_G = patient['dx_date'] - datetime.timedelta( Back )    
+            valid_ind =    [i  >  dx_G for i in ev_dates]         
         elif self.args.start_at_dx_60:           
             dx60 = patient['dx_date'] - datetime.timedelta( 60 )    
             valid_ind =    [i  >  dx60 for i in ev_dates]
@@ -283,7 +313,9 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
                     if self.args.dxseq_trunc:       
                         dx, dx_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['dx_date'])       
                     elif self.args.dxseq_trunc90:       
-                        dx, dx_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['dx_date']-datetime.timedelta(90))       
+                        dx, dx_seq = self.get_time_seq_cos_TRUNC( events_to_date , patient['dx_date']-datetime.timedelta(90))          
+                    elif self.args.dxseq_truncK:       
+                        dx, dx_seq = self.get_time_seq_cos_TRUNCK( events_to_date , patient['dx_date']-datetime.timedelta(90))       
                     elif self.args.dxseq_K:
                         dx, dx_seq = self.get_time_seq_cos_K( events_to_date , patient['dx_date']) 
                     elif self.args.dxseq_J: 
@@ -367,6 +399,15 @@ class BTH_Disease_Progression_Dataset(data.Dataset):
         
     def get_time_seq_cos_TRUNC (self, events, I_date):
         deltas = np.array([(( event['admit_date'] - I_date ).days) for event in events])
+        deltas = deltas[deltas>=0]
+        multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
+                                               num=self.args.time_embed_dim))
+        deltas, multipliers = deltas.reshape(len(deltas), 1), multipliers.reshape(1, len(multipliers))
+        positional_embeddings = np.cos(deltas * multipliers)
+        return 0, positional_embeddings
+    
+    def get_time_seq_cos_TRUNCK (self, events, I_date):
+        deltas = np.array([((I_date- event['admit_date']  ).days) for event in events])
         deltas = deltas[deltas>=0]
         multipliers = 2 * np.pi / (np.linspace(start=MIN_TIME_EMBED_PERIOD_IN_DAYS, stop=MAX_TIME_EMBED_PERIOD_IN_DAYS,
                                                num=self.args.time_embed_dim))
