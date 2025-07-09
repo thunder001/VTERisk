@@ -1,9 +1,9 @@
 {
     "search_space": {
         "disease_code_system": ["phe_lab"],
-		"train_data_dir": ["//vacrrdevmavdi01.vha.med.va.gov/MAVDEV1/Fillmore_Cancer/cat/Users/data_from_vinci/dvt_cancer_20230613/data_for_tf_model/processed/Phe_Lab/train"],
-		"dev_data_dir": ["//vacrrdevmavdi01.vha.med.va.gov/MAVDEV1/Fillmore_Cancer/cat/Users/data_from_vinci/dvt_cancer_20230613/data_for_tf_model/processed/Phe_Lab/dev"],
-	    "test_data_dir": ["//vacrrdevmavdi01.vha.med.va.gov/MAVDEV1/Fillmore_Cancer/cat/Users/data_from_vinci/dvt_cancer_20230613/data_for_tf_model/processed/Phe_Lab/test"],
+		"train_data_dir": ["//data_for_tf_model/processed/Phe_Lab/train"],
+		"dev_data_dir": ["//data_for_tf_model/processed/Phe_Lab/dev"],
+	    "test_data_dir": ["//data_for_tf_model/processed/Phe_Lab/test"],
      	"model_name": ["transformer"],
 		"pred_day":[false],
 		"month_endpoints":[[3]],
