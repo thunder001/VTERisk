@@ -8,7 +8,7 @@ Data file in a json format
 ## Usage
 ### Data structure
 The model need a json file having the following structure to run.  
-Note: data file needs to pre-split into train/train.json, dev/dev.json and dev/test.json. A
+Note: data file needs to pre-split into train/train.json, dev/dev.json and dev/test.json.
 
 
 ## Introduction
@@ -18,7 +18,7 @@ We used disease trajectories from EHR to calculate the risk of VTE at different 
 ## Usage
 ### Data structure
 
-In the data folder you can find a synthetic data with the same structure of the data used in the study. In case you want to reproduce the results on another dataset you need to generate a json file having the same structure. Phecode events and lab events (e.g. BUN0 (NA), BUN1 (below normal range), BUN2 (within normal range), BUN3 (above normal range)) are combined into single trajectories for every patient. Timestamped outcome "VTE" needs to be encoded within the events (like the third example).
+ In case you want to reproduce the results on another dataset you need to generate a json file having the same structure. Phecode events and lab events (e.g. BUN0 (NA), BUN1 (below normal range), BUN2 (within normal range), BUN3 (above normal range)) are combined into single trajectories for every patient. Timestamped outcome "VTE" needs to be encoded within the events (like the third example).
 
 Note the example file is only for the train split set, dev and test sets also need to be constructed.
 
@@ -100,7 +100,7 @@ Note the example file is only for the train split set, dev and test sets also ne
 ```
 ### Run scripts
 For code to run, go to repo root directory (VTERISK), enter the following in command line:   
-```python src/scripts/schedulers/expr_dispatcher.py –experiment-config-path configs/grid_search_test.json```
+```python src/scripts/schedulers/expr_dispatcher.py –experiment-config-path configs/Main.json```
 
 The config file is in json format, please replace ```{}``` with your absoulte path for your data file.
 ```json
